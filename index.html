@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talentové zkoušky - Hodnocení</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login screen -->
+        <div id="login-screen" class="screen">
+            <div class="login-container">
+                <h1>Talentové zkoušky</h1>
+                <form id="login-form">
+                    <input type="email" id="email" placeholder="Email" required>
+                    <input type="password" id="password" placeholder="Heslo" required>
+                    <button type="submit">Přihlásit se</button>
+                    <div id="login-error" class="error-message"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main app screen -->
+        <div id="main-screen" class="screen hidden">
+            <header>
+                <h1>Talentové zkoušky</h1>
+                <div class="header-controls">
+                    <select id="year-selector">
+                        <option value="">Vyberte školní rok</option>
+                    </select>
+                    <button id="logout-btn" class="btn-secondary">Odhlásit se</button>
+                </div>
+            </header>
+
+            <!-- Overview screen -->
+            <div id="overview-screen" class="content-screen">
+                <div class="overview-controls">
+                    <input type="text" id="search-input" placeholder="Hledat podle kódu...">
+                    <select id="sort-select">
+                        <option value="code">Řadit podle kódu</option>
+                        <option value="total">Řadit podle celkového součtu</option>
+                        <option value="portrait">Řadit podle portrétu</option>
+                        <option value="file">Řadit podle souboru</option>
+                        <option value="still-life">Řadit podle zátiší</option>
+                    </select>
+                    <button id="add-candidate-btn" class="btn-primary">Přidat uchazeče</button>
+                </div>
+                <div class="table-container">
+                    <table id="candidates-table">
+                        <thead>
+                            <tr>
+                                <th>Kód</th>
+                                <th>Portrét</th>
+                                <th>Soubor</th>
+                                <th>Zátiší</th>
+                                <th>Celkem</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody id="candidates-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Evaluation screen -->
+            <div id="evaluation-screen" class="content-screen hidden">
+                <div class="evaluation-header">
+                    <button id="back-to-overview" class="btn-secondary">← Zpět na přehled</button>
+                    <div class="candidate-nav">
+                        <button id="prev-candidate" class="btn-nav">← Předchozí</button>
+                        <span id="candidate-counter">F001 / 150</span>
+                        <button id="next-candidate" class="btn-nav">Další →</button>
+                    </div>
+                </div>
+
+                <div class="evaluation-form">
+                    <div class="candidate-info">
+                        <h2 id="candidate-code">F001</h2>
+                        <input type="text" id="candidate-code-input" placeholder="Kód uchazeče" style="display: none;">
+                    </div>
+
+                    <!-- PORTRAIT Category -->
+                    <div class="category-section">
+                        <h3>PORTRÉT</h3>
+                        <div class="category-summary">
+                            <span>SUMA PORTRÉT: <strong id="portrait-sum">0</strong></span>
+                        </div>
+                        
+                        <div class="criterion">
+                            <label>
+                                <span class="criterion-name">Formální pravidla</span>
+                                <select class="score-select" data-category="portrait" data-criterion="formal">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="portrait" data-criterion="formal">
+                                <label><input type="checkbox" value="wrong-count"> Jiný počet fotografií</label>
+                                <label><input type="checkbox" value="wrong-mounting"> Nenalepené na podkladovém papíru, špatný podklad</label>
+                                <label><input type="checkbox" value="wrong-format"> Jiný formát nebo orientace fotografií</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="portrait-formal">
+                            <label>
+                                <span class="criterion-name">Žánr</span>
+                                <select class="score-select" data-category="portrait" data-criterion="genre">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="portrait" data-criterion="genre">
+                                <label><input type="checkbox" value="wrong-genre"> Nedodržení žánru (portrét, zátiší)</label>
+                                <label><input type="checkbox" value="wrong-requirements"> Nedodržení požadavků interiér/exteriér, vytvořené/nalezené, barva/ČB</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="portrait-formal">
+                            <label>
+                                <span class="criterion-name">Volba námětu / kreativita</span>
+                                <select class="score-select" data-category="portrait" data-criterion="creativity">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="portrait" data-criterion="creativity">
+                                <label><input type="checkbox" value="uninteresting"> Nezajímavý námět, fotografie bez nápadu</label>
+                                <label><input type="checkbox" value="low-creativity"> Malá míra kreativity</label>
+                                <label><input type="checkbox" value="inconsistent"> Nekonzistentní soubor fotografií</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="portrait-formal">
+                            <label>
+                                <span class="criterion-name">Kompozice</span>
+                                <select class="score-select" data-category="portrait" data-criterion="composition">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="portrait" data-criterion="composition">
+                                <label><input type="checkbox" value="wrong-rules"> Bezdůvodné nedodržení kompozičních pravidel</label>
+                                <label><input type="checkbox" value="wrong-dof"> Nevhodné použití hloubky ostrosti</label>
+                                <label><input type="checkbox" value="wrong-crop"> Chybné ořezy snímku</label>
+                                <label><input type="checkbox" value="mergers"> Srostlice a rušivé prvky</label>
+                                <label><input type="checkbox" value="distracting"> Rušivé prvky vyvádějící pozornost</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="portrait-formal">
+                            <label>
+                                <span class="criterion-name">Práce se světlem, technická kvalita</span>
+                                <select class="score-select" data-category="portrait" data-criterion="technical">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="portrait" data-criterion="technical">
+                                <label><input type="checkbox" value="unsharp"> Neostrá fotografie</label>
+                                <label><input type="checkbox" value="exposure"> Nevhodná expozice</label>
+                                <label><input type="checkbox" value="white-balance"> Špatné vyvážení bílé</label>
+                                <label><input type="checkbox" value="resolution"> Příliš malé rozlišení nebo šum</label>
+                                <label><input type="checkbox" value="editing"> Fotografie pokažená nevhodnou editací</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILE Category -->
+                    <div class="category-section">
+                        <h3>SOUBOR</h3>
+                        <div class="category-summary">
+                            <span>SUMA SOUBOR: <strong id="file-sum">0</strong></span>
+                        </div>
+                        
+                        <div class="criterion">
+                            <label>
+                                <span class="criterion-name">Formální pravidla</span>
+                                <select class="score-select" data-category="file" data-criterion="formal">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="file" data-criterion="formal">
+                                <label><input type="checkbox" value="wrong-count"> Jiný počet fotografií</label>
+                                <label><input type="checkbox" value="wrong-mounting"> Nenalepené na podkladovém papíru</label>
+                                <label><input type="checkbox" value="wrong-format"> Jiný formát nebo orientace</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="file-formal">
+                            <label>
+                                <span class="criterion-name">Jasná souvislost s tématem souboru</span>
+                                <select class="score-select" data-category="file" data-criterion="relevance">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="file" data-criterion="relevance">
+                                <label><input type="checkbox" value="wrong-genre"> Nedodržení žánru</label>
+                                <label><input type="checkbox" value="wrong-requirements"> Nedodržení požadavků interiér/exteriér, barva/ČB</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="file-formal">
+                            <label>
+                                <span class="criterion-name">Volba námětu / kreativita</span>
+                                <select class="score-select" data-category="file" data-criterion="creativity">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="file" data-criterion="creativity">
+                                <label><input type="checkbox" value="uninteresting"> Nezajímavý námět</label>
+                                <label><input type="checkbox" value="low-creativity"> Malá míra kreativity</label>
+                                <label><input type="checkbox" value="inconsistent"> Nekonzistentní soubor</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="file-formal">
+                            <label>
+                                <span class="criterion-name">Kompozice</span>
+                                <select class="score-select" data-category="file" data-criterion="composition">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="file" data-criterion="composition">
+                                <label><input type="checkbox" value="wrong-rules"> Bezdůvodné nedodržení kompozičních pravidel</label>
+                                <label><input type="checkbox" value="wrong-dof"> Nevhodné použití hloubky ostrosti</label>
+                                <label><input type="checkbox" value="wrong-crop"> Chybné ořezy</label>
+                                <label><input type="checkbox" value="mergers"> Srostlice</label>
+                                <label><input type="checkbox" value="distracting"> Rušivé prvky</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="file-formal">
+                            <label>
+                                <span class="criterion-name">Práce se světlem, technická kvalita</span>
+                                <select class="score-select" data-category="file" data-criterion="technical">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="file" data-criterion="technical">
+                                <label><input type="checkbox" value="unsharp"> Neostrá fotografie</label>
+                                <label><input type="checkbox" value="exposure"> Nevhodná expozice</label>
+                                <label><input type="checkbox" value="white-balance"> Špatné vyvážení bílé</label>
+                                <label><input type="checkbox" value="resolution"> Malé rozlišení nebo šum</label>
+                                <label><input type="checkbox" value="editing"> Nevhodná editace</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STILL LIFE Category -->
+                    <div class="category-section">
+                        <h3>ZÁTIŠÍ</h3>
+                        <div class="category-summary">
+                            <span>SUMA ZÁTIŠÍ: <strong id="still-life-sum">0</strong></span>
+                        </div>
+                        
+                        <div class="criterion">
+                            <label>
+                                <span class="criterion-name">Formální pravidla</span>
+                                <select class="score-select" data-category="still-life" data-criterion="formal">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="still-life" data-criterion="formal">
+                                <label><input type="checkbox" value="wrong-count"> Jiný počet fotografií</label>
+                                <label><input type="checkbox" value="wrong-mounting"> Nenalepené na podkladovém papíru</label>
+                                <label><input type="checkbox" value="wrong-format"> Jiný formát nebo orientace</label>
+                            </div>
+                        </div>
+
+                        <div class="criterion" data-depends-on="still-life-formal">
+                            <label>
+                                <span class="criterion-name">Žánr a požadavky</span>
+                                <select class="score-select" data-category="still-life" data-criterion="genre">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </label>
+                            <div class="penalty-reasons" data-category="still-life" data-criterion="genre">
+                                <label><input type="checkbox" value="wrong-genre"> Nedodržení žánru</label>
+                                <label><input type="checkbox" value="wrong-requirements"> Nedodržení požadavků interiér/exteriér, barva/ČB</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="total-summary">
+                        <h3>Celkový součet: <strong id="total-sum">0</strong></h3>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="save-evaluation" class="btn-primary">Uložit hodnocení</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
