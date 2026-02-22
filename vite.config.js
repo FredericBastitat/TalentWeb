@@ -5,6 +5,7 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         assetsDir: 'assets',
+        target: 'esnext',  // ← přidej toto
     },
     server: {
         port: 3000,
