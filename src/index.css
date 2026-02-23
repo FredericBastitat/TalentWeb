@@ -1607,6 +1607,48 @@ body::before {
     border-color: rgba(251, 191, 36, 0.2);
 }
 
-.btn-table-penalty:hover {
-    background: rgba(251, 191, 36, 0.1);
+/* === Candidate Navigation === */
+.candidate-nav-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-btn-fixed {
+    padding: 0.85rem 1.5rem !important;
+    min-width: 120px;
+}
+
+.nav-candidate-badge {
+    background: var(--bg-elevated);
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+    box-shadow: var(--glass-shadow);
+}
+
+.nav-candidate-code {
+    font-weight: 800;
+    color: var(--accent-primary);
+    font-size: 1.1rem;
+    line-height: 1.1;
+}
+
+.nav-candidate-counter {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+}
+
+@media (max-width: 768px) {
+    .nav-btn-fixed {
+        min-width: auto;
+        padding: 0.75rem 1rem !important;
+    }
 }

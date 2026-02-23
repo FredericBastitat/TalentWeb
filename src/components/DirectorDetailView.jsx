@@ -1,5 +1,6 @@
 import React from 'react';
 import { CATEGORIES, EVALUATOR_META, calculateCategorySum, PENALTY_LABELS } from '../constants';
+import CandidateNavigation from './CandidateNavigation';
 
 export default function DirectorDetailView({
     candidates,
@@ -20,25 +21,13 @@ export default function DirectorDetailView({
                 <button className="btn btn-secondary" onClick={onBack}>
                     ← Zpět na přehled
                 </button>
-                <div className="eval-nav">
-                    <button
-                        className="btn btn-nav"
-                        disabled={currentIndex <= 0}
-                        onClick={() => onNavigate(-1)}
-                    >
-                        ← Předchozí
-                    </button>
-                    <span className="eval-counter">
-                        <strong>{candidate.code || ''}</strong> / {candidates.length}
-                    </span>
-                    <button
-                        className="btn btn-nav"
-                        disabled={currentIndex >= candidates.length - 1}
-                        onClick={() => onNavigate(1)}
-                    >
-                        Další →
-                    </button>
-                </div>
+                <CandidateNavigation
+                    currentIndex={currentIndex}
+                    totalCount={candidates.length}
+                    candidateCode={candidate.code}
+                    onNavigate={onNavigate}
+                    showCounter={true}
+                />
             </div>
 
             <div className="eval-form director-detail">
@@ -171,39 +160,12 @@ export default function DirectorDetailView({
                         ← Zpět na přehled
                     </button>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-                        <button
-                            className="btn btn-secondary"
-                            style={{ padding: '0.85rem 1.5rem' }}
-                            disabled={currentIndex <= 0}
-                            onClick={() => onNavigate(-1)}
-                        >
-                            ← Předchozí
-                        </button>
-
-                        <div style={{
-                            background: 'var(--bg-elevated)',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: 'var(--radius-sm)',
-                            border: '1px solid var(--border-primary)',
-                            fontWeight: 800,
-                            minWidth: '100px',
-                            textAlign: 'center',
-                            color: 'var(--accent-primary)',
-                            fontSize: '1.1rem'
-                        }}>
-                            {candidate.code}
-                        </div>
-
-                        <button
-                            className="btn btn-secondary"
-                            style={{ padding: '0.85rem 1.5rem' }}
-                            disabled={currentIndex >= candidates.length - 1}
-                            onClick={() => onNavigate(1)}
-                        >
-                            Další →
-                        </button>
-                    </div>
+                    <CandidateNavigation
+                        currentIndex={currentIndex}
+                        totalCount={candidates.length}
+                        candidateCode={candidate.code}
+                        onNavigate={onNavigate}
+                    />
                 </div>
             </div>
         </div>
