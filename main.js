@@ -1,14 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-// Option 1: Set directly here (replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY)
-// Option 2: Create config.js file (see config.example.js)
-// Option 3: Use environment variables (for build-time replacement)
-
 let SUPABASE_URL = 'YOUR_SUPABASE_URL';
 let SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 
-// Try to load from config.js if available (async)
 async function loadConfig() {
     try {
         const config = await import('./config.js');
@@ -17,18 +11,16 @@ async function loadConfig() {
             SUPABASE_ANON_KEY = config.SUPABASE_CONFIG.anonKey;
         }
     } catch (e) {
-        // config.js not found, check if values are set in HTML
         const scriptTag = document.querySelector('script[data-supabase-url]');
         if (scriptTag) {
             SUPABASE_URL = scriptTag.dataset.supabaseUrl || SUPABASE_URL;
             SUPABASE_ANON_KEY = scriptTag.dataset.supabaseAnonKey || SUPABASE_ANON_KEY;
         } else {
-            console.warn('Supabase credentials not found. Please set SUPABASE_URL and SUPABASE_ANON_KEY in main.js or create config.js');
+            console.warn('Supabase credentials not found.');
         }
     }
 }
 
-// Initialize Supabase client
 let supabase;
 await loadConfig();
 supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -62,7 +54,6 @@ const saveEvaluationBtn = document.getElementById('save-evaluation');
 
 // Initialize app
 async function init() {
-    // Check if user is already logged in
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
         currentUser = session.user;
@@ -71,8 +62,6 @@ async function init() {
     } else {
         showLoginScreen();
     }
-
-    // Setup event listeners
     setupEventListeners();
 }
 
@@ -81,19 +70,17 @@ function setupEventListeners() {
     logoutBtn.addEventListener('click', handleLogout);
     yearSelector.addEventListener('change', handleYearChange);
     backToOverviewBtn.addEventListener('click', showOverview);
-    addCandidateBtn.addEventListener('click', handleAddCandidate);
+    addCandidateBtn.addEventListener('click', handleManageCandidates);
     searchInput.addEventListener('input', filterCandidates);
     sortSelect.addEventListener('change', sortCandidates);
     prevCandidateBtn.addEventListener('click', () => navigateCandidate(-1));
     nextCandidateBtn.addEventListener('click', () => navigateCandidate(1));
     saveEvaluationBtn.addEventListener('click', saveEvaluation);
 
-    // Score selectors - update sums automatically
     document.querySelectorAll('.score-select').forEach(select => {
         select.addEventListener('change', handleScoreChange);
     });
 
-    // Listen for auth state changes
     supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_OUT') {
             showLoginScreen();
@@ -114,10 +101,7 @@ async function handleLogin(e) {
 
     errorDiv.textContent = '';
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
         errorDiv.textContent = error.message;
@@ -153,8 +137,7 @@ function showMainScreen() {
 async function loadYears() {
     const currentYearValue = new Date().getFullYear();
     const years = [];
-    
-    // Generate years from 2020 to current year + 1
+
     for (let year = 2020; year <= currentYearValue + 1; year++) {
         years.push(`${year}/${year + 1}`);
     }
@@ -167,7 +150,6 @@ async function loadYears() {
         yearSelector.appendChild(option);
     });
 
-    // Try to select current year
     const currentYearOption = `${currentYearValue}/${currentYearValue + 1}`;
     if (years.includes(currentYearOption)) {
         yearSelector.value = currentYearOption;
@@ -180,12 +162,25 @@ async function handleYearChange() {
     if (!selectedYear) {
         candidates = [];
         renderCandidatesTable();
+        updateAddButton();
         return;
     }
 
     currentYear = selectedYear;
     await loadCandidates();
     showOverview();
+    updateAddButton();
+
+    // Nový ročník bez uchazečů – zeptej se hned
+    if (candidates.length === 0) {
+        await handleManageCandidates();
+    }
+}
+
+function updateAddButton() {
+    addCandidateBtn.textContent = candidates.length === 0
+        ? 'Inicializovat ročník'
+        : 'Upravit počet uchazečů';
 }
 
 // Candidate management
@@ -204,6 +199,74 @@ async function loadCandidates() {
     }
 
     renderCandidatesTable();
+    updateAddButton();
+}
+
+async function handleManageCandidates() {
+    if (!currentYear) {
+        alert('Nejprve vyberte školní rok');
+        return;
+    }
+
+    const currentCount = candidates.length;
+    const promptText = currentCount === 0
+        ? 'Zadejte počet uchazečů pro tento ročník:'
+        : `Aktuální počet uchazečů: ${currentCount}\nZadejte nový počet:`;
+
+    const countStr = prompt(promptText);
+    if (!countStr) return;
+    const newCount = parseInt(countStr);
+    if (isNaN(newCount) || newCount < 1) {
+        alert('Neplatný počet');
+        return;
+    }
+
+    if (newCount > currentCount) {
+        // Přidat chybějící uchazeče
+        const newCandidates = Array.from({ length: newCount - currentCount }, (_, i) => ({
+            code: `F${String(currentCount + i + 1).padStart(3, '0')}`,
+            school_year: currentYear,
+            evaluation: {
+                portrait: { formal: 0 },
+                file: { formal: 0 },
+                'still-life': { formal: 0 }
+            }
+        }));
+
+        const { error } = await supabase.from('candidates').insert(newCandidates);
+        if (error) { alert('Chyba: ' + error.message); return; }
+
+    } else if (newCount < currentCount) {
+        // Smazat přebývající uchazeče od konce
+        if (!confirm(`Opravdu chcete smazat ${currentCount - newCount} uchazečů od konce? Tato akce je nevratná.`)) return;
+        const toDelete = candidates.slice(newCount).map(c => c.id);
+        const { error } = await supabase.from('candidates').delete().in('id', toDelete);
+        if (error) { alert('Chyba: ' + error.message); return; }
+    }
+
+    await loadCandidates();
+}
+
+async function moveCandidate(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= candidates.length) return;
+
+    const a = candidates[index];
+    const b = candidates[targetIndex];
+
+    // Dočasný kód aby nedošlo ke konfliktu unique constraint
+    const tempCode = `TEMP_${Date.now()}`;
+
+    const { error: e0 } = await supabase.from('candidates').update({ code: tempCode }).eq('id', a.id);
+    if (e0) { alert('Chyba při přesunu'); return; }
+
+    const { error: e1 } = await supabase.from('candidates').update({ code: a.code }).eq('id', b.id);
+    if (e1) { alert('Chyba při přesunu'); return; }
+
+    const { error: e2 } = await supabase.from('candidates').update({ code: b.code }).eq('id', a.id);
+    if (e2) { alert('Chyba při přesunu'); return; }
+
+    await loadCandidates();
 }
 
 function renderCandidatesTable() {
@@ -256,19 +319,13 @@ function renderCandidatesTable() {
 }
 
 function calculateCategorySum(candidate, category) {
-    if (!candidate.evaluation || !candidate.evaluation[category]) {
-        return 0;
-    }
+    if (!candidate.evaluation || !candidate.evaluation[category]) return 0;
 
     const categoryData = candidate.evaluation[category];
     let sum = 0;
 
-    // Check if formal rules is 0 - if so, return 0
-    if (categoryData.formal === 0) {
-        return 0;
-    }
+    if (categoryData.formal === 0) return 0;
 
-    // Sum all criteria scores
     Object.keys(categoryData).forEach(key => {
         if (key !== 'penalties' && typeof categoryData[key] === 'number') {
             sum += categoryData[key];
@@ -293,7 +350,7 @@ function filterCandidates() {
 
 function sortCandidates() {
     const sortBy = sortSelect.value;
-    
+
     candidates.sort((a, b) => {
         switch (sortBy) {
             case 'code':
@@ -314,76 +371,6 @@ function sortCandidates() {
     });
 
     renderCandidatesTable();
-}
-
-async function handleAddCandidate() {
-    if (!currentYear) {
-        alert('Nejprve vyberte školní rok');
-        return;
-    }
-
-    if (candidates.length === 0) {
-        // Inicializace ročníku
-        const countStr = prompt('Kolik uchazečů má tento ročník?');
-        if (!countStr) return;
-        const count = parseInt(countStr);
-        if (isNaN(count) || count < 1) {
-            alert('Neplatný počet');
-            return;
-        }
-
-        const newCandidates = Array.from({ length: count }, (_, i) => ({
-            code: `F${String(i + 1).padStart(3, '0')}`,
-            school_year: currentYear,
-            evaluation: {
-                portrait: { formal: 0 },
-                file: { formal: 0 },
-                'still-life': { formal: 0 }
-            }
-        }));
-
-        const { error } = await supabase.from('candidates').insert(newCandidates);
-        if (error) { alert('Chyba: ' + error.message); return; }
-        await loadCandidates();
-    } else {
-        // Přidat jednoho navíc
-        const nextNumber = candidates.length + 1;
-        const { error } = await supabase.from('candidates').insert({
-            code: `F${String(nextNumber).padStart(3, '0')}`,
-            school_year: currentYear,
-            evaluation: {
-                portrait: { formal: 0 },
-                file: { formal: 0 },
-                'still-life': { formal: 0 }
-            }
-        });
-        if (error) { alert('Chyba: ' + error.message); return; }
-        await loadCandidates();
-    }
-}
-
-
-
-async function moveCandidate(index, direction) {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= candidates.length) return;
-
-    const a = candidates[index];
-    const b = candidates[targetIndex];
-
-    // Použij dočasný kód aby nedošlo ke konfliktu
-    const tempCode = `TEMP_${Date.now()}`;
-
-    const { error: e0 } = await supabase.from('candidates').update({ code: tempCode }).eq('id', a.id);
-    if (e0) { alert('Chyba při přesunu'); return; }
-
-    const { error: e1 } = await supabase.from('candidates').update({ code: a.code }).eq('id', b.id);
-    if (e1) { alert('Chyba při přesunu'); return; }
-
-    const { error: e2 } = await supabase.from('candidates').update({ code: b.code }).eq('id', a.id);
-    if (e2) { alert('Chyba při přesunu'); return; }
-
-    await loadCandidates();
 }
 
 // Evaluation screen
@@ -412,27 +399,22 @@ function loadCandidateEvaluation() {
     candidateCodeDisplay.textContent = candidate.code || '';
     candidateCounter.textContent = `${candidate.code || ''} / ${candidates.length}`;
 
-    // Load evaluation data
     const evaluation = candidate.evaluation || {
         portrait: { formal: 0 },
         file: { formal: 0 },
         'still-life': { formal: 0 }
     };
 
-    // Load scores for each category
     ['portrait', 'file', 'still-life'].forEach(category => {
         const categoryData = evaluation[category] || { formal: 0 };
-        
+
         Object.keys(categoryData).forEach(key => {
             if (key !== 'penalties' && typeof categoryData[key] === 'number') {
                 const select = document.querySelector(`.score-select[data-category="${category}"][data-criterion="${key}"]`);
-                if (select) {
-                    select.value = categoryData[key];
-                }
+                if (select) select.value = categoryData[key];
             }
         });
 
-        // Load penalties
         if (categoryData.penalties) {
             Object.keys(categoryData.penalties).forEach(criterion => {
                 const penalties = categoryData.penalties[criterion] || [];
@@ -440,22 +422,18 @@ function loadCandidateEvaluation() {
                     const checkbox = document.querySelector(
                         `.penalty-reasons[data-category="${category}"][data-criterion="${criterion}"] input[value="${penalty}"]`
                     );
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
+                    if (checkbox) checkbox.checked = true;
                 });
             });
         }
     });
 
     updateSums();
-    updateDisabledStates();
 }
 
 function navigateCandidate(direction) {
     const newIndex = currentCandidateIndex + direction;
     if (newIndex >= 0 && newIndex < candidates.length) {
-        // Save current evaluation before navigating
         saveEvaluation(false).then(() => {
             openEvaluation(newIndex);
         });
@@ -467,64 +445,27 @@ function updateNavigationButtons() {
     nextCandidateBtn.disabled = currentCandidateIndex >= candidates.length - 1;
 }
 
-// Score handling
-function handleScoreChange(e) {
-
+function handleScoreChange() {
     updateSums();
 }
 
-function lockCategory(category) {
-    const categorySection = document.querySelector(`.category-section:has(.score-select[data-category="${category}"][data-criterion="formal"])`);
-    const criteria = categorySection.querySelectorAll(`.criterion[data-depends-on="${category}-formal"]`);
-    
-    criteria.forEach(criterion => {
-        criterion.classList.add('disabled');
-        const select = criterion.querySelector('.score-select');
-        if (select) select.value = '0';
-    });
-
-    // Set sum to 0
-    const sumElement = document.getElementById(`${category}-sum`);
-    if (sumElement) {
-        sumElement.textContent = '0';
-    }
-}
-
-function unlockCategory(category) {
-    const categorySection = document.querySelector(`.category-section:has(.score-select[data-category="${category}"][data-criterion="formal"])`);
-    const criteria = categorySection.querySelectorAll(`.criterion[data-depends-on="${category}-formal"]`);
-    
-    criteria.forEach(criterion => {
-        criterion.classList.remove('disabled');
-    });
-}
-
-function updateDisabledStates() {
-}
-
 function updateSums() {
-    // Calculate portrait sum
     const portraitSum = calculateCurrentCategorySum('portrait');
     document.getElementById('portrait-sum').textContent = portraitSum;
 
-    // Calculate file sum
     const fileSum = calculateCurrentCategorySum('file');
     document.getElementById('file-sum').textContent = fileSum;
 
-    // Calculate still-life sum
     const stillLifeSum = calculateCurrentCategorySum('still-life');
     document.getElementById('still-life-sum').textContent = stillLifeSum;
 
-    // Calculate total
     const total = portraitSum + fileSum + stillLifeSum;
     document.getElementById('total-sum').textContent = total;
 }
 
 function calculateCurrentCategorySum(category) {
     const formalSelect = document.querySelector(`.score-select[data-category="${category}"][data-criterion="formal"]`);
-    if (!formalSelect || parseInt(formalSelect.value) === 0) {
-        return 0;
-    }
+    if (!formalSelect || parseInt(formalSelect.value) === 0) return 0;
 
     let sum = 0;
     const selects = document.querySelectorAll(`.score-select[data-category="${category}"]`);
@@ -538,7 +479,6 @@ function calculateCurrentCategorySum(category) {
 async function saveEvaluation(showAlert = true) {
     if (!currentCandidateId) return;
 
-    // Collect evaluation data
     const evaluation = {
         portrait: collectCategoryData('portrait'),
         file: collectCategoryData('file'),
@@ -555,15 +495,11 @@ async function saveEvaluation(showAlert = true) {
         return;
     }
 
-    // Update local data
     const candidate = candidates[currentCandidateIndex];
     candidate.evaluation = evaluation;
 
-    if (showAlert) {
-        alert('Hodnocení uloženo');
-    }
+    if (showAlert) alert('Hodnocení uloženo');
 
-    // Update overview table if visible
     if (!evaluationScreen.classList.contains('hidden')) {
         renderCandidatesTable();
     }
@@ -578,21 +514,16 @@ function collectCategoryData(category) {
         const criterion = select.dataset.criterion;
         data[criterion] = parseInt(select.value) || 0;
 
-        // Collect penalties
         const penaltyContainer = document.querySelector(
             `.penalty-reasons[data-category="${category}"][data-criterion="${criterion}"]`
         );
         if (penaltyContainer) {
             const checked = Array.from(penaltyContainer.querySelectorAll('input:checked')).map(cb => cb.value);
-            if (checked.length > 0) {
-                penalties[criterion] = checked;
-            }
+            if (checked.length > 0) penalties[criterion] = checked;
         }
     });
 
-    if (Object.keys(penalties).length > 0) {
-        data.penalties = penalties;
-    }
+    if (Object.keys(penalties).length > 0) data.penalties = penalties;
 
     return data;
 }
