@@ -15,6 +15,7 @@ import OverviewScreen from './components/OverviewScreen';
 import EvaluationScreen from './components/EvaluationScreen';
 import DirectorDetailView from './components/DirectorDetailView';
 import PenaltiesModal from './components/PenaltiesModal';
+import UserManagementModal from './components/UserManagementModal';
 import Toast from './components/Toast';
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
     const [currentView, setCurrentView] = useState('overview');
     const [currentCandidateIndex, setCurrentCandidateIndex] = useState(0);
     const [activeModalCandidate, setActiveModalCandidate] = useState(null);
+    const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
     const [toast, setToast] = useState(null);
 
     const isDirector = role === 'director';
@@ -539,6 +541,7 @@ export default function App() {
                         onManageCandidates={handleManageCandidates}
                         onExport={exportToExcel}
                         onOpenPenalties={handleOpenPenalties}
+                        onOpenUserManagement={() => setIsUserManagementOpen(true)}
                     />
                 ) : isDirector ? (
                     <DirectorDetailView
@@ -567,6 +570,13 @@ export default function App() {
                     candidate={activeModalCandidate}
                     evaluationsMap={evaluationsMap}
                     onClose={() => setActiveModalCandidate(null)}
+                />
+            )}
+
+            {isUserManagementOpen && (
+                <UserManagementModal
+                    onClose={() => setIsUserManagementOpen(false)}
+                    showToast={showToast}
                 />
             )}
         </>

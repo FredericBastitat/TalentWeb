@@ -12,6 +12,7 @@ export default function OverviewScreen({
     onManageCandidates,
     onExport,
     onOpenPenalties,
+    onOpenUserManagement,
 }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('code');
@@ -71,9 +72,14 @@ export default function OverviewScreen({
         <div className="animate-fade-in">
             <div className="overview-toolbar">
                 {isDirector && (
-                    <button className="btn btn-secondary" onClick={onExport}>
-                        📊 Exportovat Excel
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn btn-secondary" onClick={onOpenUserManagement}>
+                            👤 Správa uživatelů
+                        </button>
+                        <button className="btn btn-secondary" onClick={onExport}>
+                            📊 Exportovat Excel
+                        </button>
+                    </div>
                 )}
 
                 <div className="search-wrapper">
@@ -161,24 +167,7 @@ export default function OverviewScreen({
                                             >
                                                 {isDirector ? '👁️' : '✏️'}
                                             </button>
-                                            {!isDirector && (
-                                                <>
-                                                    <button
-                                                        className="btn-table-action"
-                                                        title="Posunout nahoru"
-                                                        onClick={() => onMoveCandidate(candidate.originalIndex, -1)}
-                                                    >
-                                                        ↑
-                                                    </button>
-                                                    <button
-                                                        className="btn-table-action"
-                                                        title="Posunout dolů"
-                                                        onClick={() => onMoveCandidate(candidate.originalIndex, 1)}
-                                                    >
-                                                        ↓
-                                                    </button>
-                                                </>
-                                            )}
+
                                         </div>
                                     </td>
                                 </tr>
