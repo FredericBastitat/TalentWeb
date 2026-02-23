@@ -209,6 +209,31 @@ export default function DirectorDetailView({
                         </span>
                     </div>
                 </div>
+
+                {/* Bottom navigation */}
+                <div className="save-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, padding: '0.85rem' }}
+                        disabled={currentIndex <= 0}
+                        onClick={() => onNavigate(-1)}
+                    >
+                        ← Předchozí
+                    </button>
+
+                    <button className="btn btn-secondary" style={{ flex: 2, padding: '0.85rem' }} onClick={onBack}>
+                        Zpět na přehled
+                    </button>
+
+                    <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, padding: '0.85rem' }}
+                        disabled={currentIndex >= candidates.length - 1}
+                        onClick={() => onNavigate(1)}
+                    >
+                        Další →
+                    </button>
+                </div>
             </div>
         </div>
     );

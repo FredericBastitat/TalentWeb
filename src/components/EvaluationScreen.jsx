@@ -169,9 +169,27 @@ export default function EvaluationScreen({
                     <span className="total-bar-value">{totalSum}</span>
                 </div>
 
-                <div className="save-row">
-                    <button className="btn btn-primary btn-save" onClick={handleSave}>
+                <div className="save-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, padding: '0.85rem' }}
+                        disabled={currentIndex <= 0}
+                        onClick={() => onNavigate(-1)}
+                    >
+                        ← Předchozí
+                    </button>
+
+                    <button className="btn btn-primary btn-save" style={{ flex: 2 }} onClick={handleSave}>
                         💾 Uložit hodnocení
+                    </button>
+
+                    <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, padding: '0.85rem' }}
+                        disabled={currentIndex >= candidates.length - 1}
+                        onClick={() => onNavigate(1)}
+                    >
+                        Další →
                     </button>
                 </div>
             </div>
