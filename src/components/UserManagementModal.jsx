@@ -12,10 +12,10 @@ export default function UserManagementModal({ onClose, showToast }) {
     });
 
     const roles = [
-        { id: 'evaluator-1', name: 'Hodnotitel 1 (H1)' },
-        { id: 'evaluator-2', name: 'Hodnotitel 2 (H2)' },
-        { id: 'evaluator-3', name: 'Hodnotitel 3 (H3)' },
-        { id: 'director', name: 'Ředitel (Director)' },
+        { id: 'evaluator-1', name: 'Hodnotitel č. 1' },
+        { id: 'evaluator-2', name: 'Hodnotitel č. 2' },
+        { id: 'evaluator-3', name: 'Hodnotitel č. 3' },
+        { id: 'director', name: 'Administrátor (Ředitel)' },
     ];
 
     useEffect(() => {
@@ -133,7 +133,7 @@ export default function UserManagementModal({ onClose, showToast }) {
                                                                 color: u.role === 'director' ? '#c084fc' : '#818cf8',
                                                                 borderColor: u.role === 'director' ? 'rgba(192,132,252,0.3)' : 'rgba(129,140,248,0.3)'
                                                             }}>
-                                                            {u.role}
+                                                            {roles.find(r => r.id === u.role)?.name || u.role}
                                                         </span>
                                                     </td>
                                                     <td style={{ padding: '0.6rem', textAlign: 'right' }}>
