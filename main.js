@@ -308,33 +308,43 @@ async function handleAddCandidate() {
         return;
     }
 
-    const code = prompt('Zadejte kód nového uchazeče (např. F001):');
-    if (!code) return;
+    const countStr = prompt('Zadejte počet uchazečů:');
+    if (!countStr) return;
+    const count = parseInt(countStr);
+    if (isNaN(count) || count < 1) {
+        alert('Neplatný počet');
+        return;
+    }
 
-    const { data, error } = await supabase
-        .from('candidates')
-        .insert({
-            code: code.trim(),
+    // Zjisti aktuální nejvyšší číslo
+    const existingNumbers = candidates
+        .map(c => parseInt((c.code || '').replace('F', '')))
+        .filter(n => !isNaN(n));
+    let nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+
+    const newCandidates = [];
+    for (let i = 0; i < count; i++) {
+        newCandidates.push({
+            code: `F${String(nextNumber + i).padStart(3, '0')}`,
             school_year: currentYear,
             evaluation: {
                 portrait: { formal: 0 },
                 file: { formal: 0 },
                 'still-life': { formal: 0 }
             }
-        })
-        .select()
-        .single();
+        });
+    }
+
+    const { error } = await supabase
+        .from('candidates')
+        .insert(newCandidates);
 
     if (error) {
-        alert('Chyba při vytváření uchazeče: ' + error.message);
+        alert('Chyba při vytváření uchazečů: ' + error.message);
         return;
     }
 
     await loadCandidates();
-    const index = candidates.findIndex(c => c.id === data.id);
-    if (index !== -1) {
-        openEvaluation(index);
-    }
 }
 
 // Evaluation screen
