@@ -83,6 +83,21 @@ Deno.serve(async (req) => {
                 return createResponse({ success: true })
             }
 
+            case 'update': {
+                const { userId, role } = userData || {}
+                if (!userId || !role) {
+                    throw new Error('Chybí ID uživatele nebo nová role')
+                }
+
+                const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+                    app_metadata: { role },
+                    user_metadata: { role }
+                })
+
+                if (error) throw error
+                return createResponse({ success: true, user: data.user })
+            }
+
             default:
                 throw new Error(`Neznámá akce: ${action}`)
         }

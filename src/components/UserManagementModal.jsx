@@ -5,6 +5,7 @@ export default function UserManagementModal({ onClose, showToast }) {
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
     const [showForm, setShowForm] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -68,6 +69,23 @@ export default function UserManagementModal({ onClose, showToast }) {
         }
     };
 
+    const handleUpdateRole = async (userId, newRole) => {
+        setLoading(true);
+        try {
+            const { data, error } = await invokeAdmin('update', { userId, role: newRole });
+            if (error) throw error;
+            if (!data.success) throw new Error(data.error);
+
+            showToast('Role byla aktualizována', 'success');
+            setEditingUser(null);
+            fetchUsers();
+        } catch (err) {
+            showToast(err.message || 'Chyba při aktualizaci', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleDeleteUser = async (userId, userEmail) => {
         if (!window.confirm(`Opravdu chcete smazat uživatele ${userEmail}?`)) return;
 
@@ -89,7 +107,7 @@ export default function UserManagementModal({ onClose, showToast }) {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-card animate-slide-up" style={{ maxWidth: '640px' }}>
+            <div className="modal-card animate-slide-up" style={{ maxWidth: '700px' }}>
                 <div className="modal-header">
                     <h2>Správa uživatelů</h2>
                     <button className="btn-close" onClick={onClose} aria-label="Zavřít">&times;</button>
@@ -114,8 +132,8 @@ export default function UserManagementModal({ onClose, showToast }) {
                                     <table className="data-table">
                                         <thead>
                                             <tr>
-                                                <th>E-mail hodnostitele</th>
-                                                <th>Přiřazená role</th>
+                                                <th>E-mail</th>
+                                                <th>Role</th>
                                                 <th style={{ textAlign: 'right' }}>Akce</th>
                                             </tr>
                                         </thead>
@@ -124,9 +142,37 @@ export default function UserManagementModal({ onClose, showToast }) {
                                                 <tr key={u.id}>
                                                     <td style={{ fontSize: '0.85rem', fontWeight: 500 }}>{u.email}</td>
                                                     <td>
-                                                        <span className={`user-role-tag ${u.role === 'director' ? 'user-role-director' : 'user-role-evaluator'}`}>
-                                                            {roles.find(r => r.id === u.role)?.name || u.role}
-                                                        </span>
+                                                        {editingUser === u.id ? (
+                                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                                <select
+                                                                    className="select-field"
+                                                                    style={{ height: '32px', padding: '0 2rem 0 0.5rem', fontSize: '0.8rem' }}
+                                                                    defaultValue={u.role}
+                                                                    onChange={(e) => handleUpdateRole(u.id, e.target.value)}
+                                                                    disabled={loading}
+                                                                >
+                                                                    {roles.map(r => (
+                                                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <button
+                                                                    className="btn-ghost"
+                                                                    style={{ padding: '0.2rem', fontSize: '0.7rem' }}
+                                                                    onClick={() => setEditingUser(null)}
+                                                                >
+                                                                    Zrušit
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div
+                                                                className={`user-role-tag ${u.role === 'director' ? 'user-role-director' : 'user-role-evaluator'}`}
+                                                                style={{ cursor: 'pointer' }}
+                                                                onClick={() => setEditingUser(u.id)}
+                                                                title="Klikněte pro změnu role"
+                                                            >
+                                                                {roles.find(r => r.id === u.role)?.name || u.role} ✎
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td style={{ textAlign: 'right' }}>
                                                         <button
