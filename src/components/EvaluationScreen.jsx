@@ -164,10 +164,7 @@ export default function EvaluationScreen({
                     );
                 })}
 
-                <div className="total-bar">
-                    <span className="total-bar-label">Celkový součet</span>
-                    <span className="total-bar-value">{totalSum}</span>
-                </div>
+
 
                 <div className="save-row" style={{ marginTop: '2rem' }}>
                     <button className="btn btn-primary btn-save" style={{ width: '100%', padding: '1rem' }} onClick={handleSave}>

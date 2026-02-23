@@ -14,6 +14,7 @@ import AppHeader from './components/AppHeader';
 import OverviewScreen from './components/OverviewScreen';
 import EvaluationScreen from './components/EvaluationScreen';
 import DirectorDetailView from './components/DirectorDetailView';
+import PenaltiesModal from './components/PenaltiesModal';
 import Toast from './components/Toast';
 
 export default function App() {
@@ -24,7 +25,8 @@ export default function App() {
     const [candidates, setCandidates] = useState([]);
     const [evaluationsMap, setEvaluationsMap] = useState({});
     const [currentView, setCurrentView] = useState('overview');
-    const [currentCandidateIndex, setCurrentCandidateIndex] = useState(-1);
+    const [currentCandidateIndex, setCurrentCandidateIndex] = useState(0);
+    const [activeModalCandidate, setActiveModalCandidate] = useState(null);
     const [toast, setToast] = useState(null);
 
     const isDirector = role === 'director';
@@ -253,6 +255,10 @@ export default function App() {
         }
     };
 
+    const handleOpenPenalties = (candidate) => {
+        setActiveModalCandidate(candidate);
+    };
+
     // ── Excel export ─────────────────────────────────────────────
     const exportToExcel = () => {
         if (!currentYear || candidates.length === 0) {
@@ -276,16 +282,16 @@ export default function App() {
     };
 
     const exportDirectorSummary = (wb) => {
-        const headers = ['Kód', 'H1', 'H2', 'H3', 'Celkem'];
+        const headers = ['Kód', 'Portrét', 'Soubor', 'Zátiší'];
         const rows = candidates.map(c => {
             const evals = evaluationsMap[c.id] || {};
-            const h1 = calculateTotalSum(evals[1]);
-            const h2 = calculateTotalSum(evals[2]);
-            const h3 = calculateTotalSum(evals[3]);
-            return [c.code, h1, h2, h3, h1 + h2 + h3];
+            const pSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'portrait'), 0);
+            const fSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'file'), 0);
+            const sSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'still-life'), 0);
+            return [c.code, pSum, fSum, sSum];
         });
         const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-        ws['!cols'] = [{ wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
+        ws['!cols'] = [{ wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
         XLSX.utils.book_append_sheet(wb, ws, 'Souhrn');
     };
 
@@ -343,8 +349,6 @@ export default function App() {
             merges.push({ s: { r: 0, c: catStartCol }, e: { r: 0, c: catEndCol } });
         });
 
-        const totalCol = colIdx;
-        colIdx++;
         const totalColsCount = colIdx;
 
         const ws = {};
@@ -363,13 +367,7 @@ export default function App() {
             border: borders,
         });
 
-        merges.push({ s: { r: 0, c: totalCol }, e: { r: 1, c: totalCol } });
-        setCell(0, totalCol, 'CELKEM', {
-            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-            fill: { fgColor: { rgb: '7030A0' } },
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-            border: borders,
-        });
+
 
         excelCategories.forEach(cat => {
             const firstEntry = colMap.find(e => e.category === cat.key);
@@ -443,14 +441,6 @@ export default function App() {
                     });
                 }
             });
-
-            const grandTotal = calculateTotalSum(ev);
-            setCell(row, totalCol, grandTotal, {
-                font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
-                fill: { fgColor: { rgb: '7030A0' } },
-                alignment: { horizontal: 'center', vertical: 'center' },
-                border: borders,
-            });
         });
 
         // Column widths & row heights
@@ -460,7 +450,7 @@ export default function App() {
             else if (entry.type === 'penalty') colWidths.push({ wch: 8 });
             else if (entry.type === 'suma') colWidths.push({ wch: 7 });
         });
-        colWidths.push({ wch: 9 });
+
 
         const rowHeights = [{ hpt: 28 }, { hpt: 24 }];
         candidates.forEach(() => rowHeights.push({ hpt: 20 }));
@@ -546,10 +536,11 @@ export default function App() {
                         isDirector={isDirector}
                         onOpenEvaluation={openEvaluation}
                         onMoveCandidate={moveCandidate}
-                        onManageCandidates={handleManageCandidates}
+                        onManageCandidates={() => setCurrentView('candidate-manager')}
                         onExport={exportToExcel}
+                        onOpenPenalties={handleOpenPenalties}
                     />
-                ) : isDirector ? (
+                ) : currentView === 'director-detail' ? (
                     <DirectorDetailView
                         candidates={candidates}
                         currentIndex={currentCandidateIndex}
@@ -570,6 +561,14 @@ export default function App() {
                 )}
             </div>
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+            {activeModalCandidate && (
+                <PenaltiesModal
+                    candidate={activeModalCandidate}
+                    evaluationsMap={evaluationsMap}
+                    onClose={() => setActiveModalCandidate(null)}
+                />
+            )}
         </>
     );
 }

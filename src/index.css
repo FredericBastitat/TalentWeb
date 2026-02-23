@@ -1476,3 +1476,137 @@ body::before {
 .toast.error {
     border-color: rgba(248, 113, 113, 0.3);
 }
+
+/* === Modal === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.modal-card {
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 600px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.btn-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.penalties-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.penalty-item-row {
+    background: var(--bg-elevated);
+    border-left: 4px solid var(--border-primary);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+}
+
+.penalty-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.penalty-evaluator {
+    text-transform: uppercase;
+}
+
+.penalty-category {
+    color: var(--text-muted);
+}
+
+.penalty-criterion {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.penalty-label-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-zoom-in {
+    animation: zoomIn 0.2s ease-out forwards;
+}
+
+.btn-table-penalty {
+    color: var(--warning);
+    border-color: rgba(251, 191, 36, 0.2);
+}
+
+.btn-table-penalty:hover {
+    background: rgba(251, 191, 36, 0.1);
+}

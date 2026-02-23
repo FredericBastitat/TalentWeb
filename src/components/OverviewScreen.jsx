@@ -11,6 +11,7 @@ export default function OverviewScreen({
     onMoveCandidate,
     onManageCandidates,
     onExport,
+    onOpenPenalties,
 }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('code');
@@ -20,24 +21,15 @@ export default function OverviewScreen({
             const entry = { ...c, originalIndex };
 
             if (isDirector) {
-                // Director: compute totals for all 3 evaluators
                 const evals = evaluationsMap[c.id] || {};
-                entry.evaluatorTotals = {};
-                let grandTotal = 0;
-                [1, 2, 3].forEach(eid => {
-                    const ev = evals[eid] || null;
-                    const total = calculateTotalSum(ev);
-                    entry.evaluatorTotals[eid] = total;
-                    grandTotal += total;
-                });
-                entry.grandTotal = grandTotal;
+                entry.portraitSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'portrait'), 0);
+                entry.fileSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'file'), 0);
+                entry.stillLifeSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'still-life'), 0);
             } else {
-                // Evaluator: compute their own category sums
                 const ev = evaluationsMap[c.id]?.[evaluatorId] || null;
                 entry.portraitSum = calculateCategorySum(ev, 'portrait');
                 entry.fileSum = calculateCategorySum(ev, 'file');
                 entry.stillLifeSum = calculateCategorySum(ev, 'still-life');
-                entry.total = entry.portraitSum + entry.fileSum + entry.stillLifeSum;
             }
 
             return entry;
@@ -54,21 +46,12 @@ export default function OverviewScreen({
             switch (sortBy) {
                 case 'code':
                     return (a.code || '').localeCompare(b.code || '');
-                case 'total':
-                    if (isDirector) return b.grandTotal - a.grandTotal;
-                    return b.total - a.total;
                 case 'portrait':
                     return (b.portraitSum || 0) - (a.portraitSum || 0);
                 case 'file':
                     return (b.fileSum || 0) - (a.fileSum || 0);
                 case 'still-life':
                     return (b.stillLifeSum || 0) - (a.stillLifeSum || 0);
-                case 'h1':
-                    return (b.evaluatorTotals?.[1] || 0) - (a.evaluatorTotals?.[1] || 0);
-                case 'h2':
-                    return (b.evaluatorTotals?.[2] || 0) - (a.evaluatorTotals?.[2] || 0);
-                case 'h3':
-                    return (b.evaluatorTotals?.[3] || 0) - (a.evaluatorTotals?.[3] || 0);
                 default:
                     return 0;
             }
@@ -77,21 +60,12 @@ export default function OverviewScreen({
         return list;
     }, [candidates, evaluationsMap, searchTerm, sortBy, isDirector, evaluatorId]);
 
-    const sortOptions = isDirector
-        ? [
-            { value: 'code', label: 'Řadit podle kódu' },
-            { value: 'total', label: 'Řadit podle celkového součtu' },
-            { value: 'h1', label: 'Řadit podle H1' },
-            { value: 'h2', label: 'Řadit podle H2' },
-            { value: 'h3', label: 'Řadit podle H3' },
-        ]
-        : [
-            { value: 'code', label: 'Řadit podle kódu' },
-            { value: 'total', label: 'Řadit podle celkového součtu' },
-            { value: 'portrait', label: 'Řadit podle portrétu' },
-            { value: 'file', label: 'Řadit podle souboru' },
-            { value: 'still-life', label: 'Řadit podle zátiší' },
-        ];
+    const sortOptions = [
+        { value: 'code', label: 'Řadit podle kódu' },
+        { value: 'portrait', label: 'Řadit podle portrétu' },
+        { value: 'file', label: 'Řadit podle souboru' },
+        { value: 'still-life', label: 'Řadit podle zátiší' },
+    ];
 
     return (
         <div className="animate-fade-in">
@@ -135,31 +109,13 @@ export default function OverviewScreen({
             <div className="table-card">
                 <table className="data-table">
                     <thead>
-                        {isDirector ? (
-                            <tr>
-                                <th>Kód</th>
-                                {[1, 2, 3].map(eid => (
-                                    <th
-                                        key={eid}
-                                        className="evaluator-col-header"
-                                        style={{ color: EVALUATOR_META[eid].color }}
-                                    >
-                                        {EVALUATOR_META[eid].shortName}
-                                    </th>
-                                ))}
-                                <th>Celkem</th>
-                                <th>Akce</th>
-                            </tr>
-                        ) : (
-                            <tr>
-                                <th>Kód</th>
-                                <th>Portrét</th>
-                                <th>Soubor</th>
-                                <th>Zátiší</th>
-                                <th>Celkem</th>
-                                <th>Akce</th>
-                            </tr>
-                        )}
+                        <tr>
+                            <th>Kód</th>
+                            <th>Portrét</th>
+                            <th>Soubor</th>
+                            <th>Zátiší</th>
+                            <th>Akce</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {processedCandidates.length === 0 ? (
@@ -183,41 +139,21 @@ export default function OverviewScreen({
                                         <span className="code-badge">{candidate.code || ''}</span>
                                     </td>
 
-                                    {isDirector ? (
-                                        <>
-                                            {[1, 2, 3].map(eid => {
-                                                const total = candidate.evaluatorTotals[eid];
-                                                const hasData = (evaluationsMap[candidate.id]?.[eid]);
-                                                return (
-                                                    <td key={eid} className="score-cell">
-                                                        <span
-                                                            className="evaluator-score"
-                                                            style={{
-                                                                color: hasData ? EVALUATOR_META[eid].color : 'var(--text-muted)',
-                                                            }}
-                                                        >
-                                                            {hasData ? total : '–'}
-                                                        </span>
-                                                    </td>
-                                                );
-                                            })}
-                                            <td>
-                                                <span className="score-total">{candidate.grandTotal}</span>
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td className="score-cell">{candidate.portraitSum}</td>
-                                            <td className="score-cell">{candidate.fileSum}</td>
-                                            <td className="score-cell">{candidate.stillLifeSum}</td>
-                                            <td>
-                                                <span className="score-total">{candidate.total}</span>
-                                            </td>
-                                        </>
-                                    )}
+                                    <td className="score-cell">{candidate.portraitSum}</td>
+                                    <td className="score-cell">{candidate.fileSum}</td>
+                                    <td className="score-cell">{candidate.stillLifeSum}</td>
 
                                     <td>
                                         <div className="table-actions">
+                                            {isDirector && (
+                                                <button
+                                                    className="btn-table-action btn-table-penalty"
+                                                    title="Zobrazit chyby"
+                                                    onClick={() => onOpenPenalties(candidate)}
+                                                >
+                                                    ⚠️
+                                                </button>
+                                            )}
                                             <button
                                                 className="btn-table-action btn-table-edit"
                                                 title={isDirector ? 'Zobrazit detail' : 'Upravit'}

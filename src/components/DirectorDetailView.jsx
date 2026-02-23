@@ -1,5 +1,5 @@
 import React from 'react';
-import { CATEGORIES, EVALUATOR_META, calculateCategorySum, calculateTotalSum, PENALTY_LABELS } from '../constants';
+import { CATEGORIES, EVALUATOR_META, calculateCategorySum, PENALTY_LABELS } from '../constants';
 
 export default function DirectorDetailView({
     candidates,
@@ -53,7 +53,6 @@ export default function DirectorDetailView({
                 <div className="director-summary-row">
                     {evaluatorIds.map(eid => {
                         const ev = evals[eid] || null;
-                        const total = calculateTotalSum(ev);
                         const meta = EVALUATOR_META[eid];
                         const hasData = !!ev;
                         return (
@@ -68,12 +67,7 @@ export default function DirectorDetailView({
                                 <div className="director-summary-label" style={{ color: meta.color }}>
                                     {meta.name}
                                 </div>
-                                <div
-                                    className="director-summary-total"
-                                    style={{ color: hasData ? meta.color : 'var(--text-muted)' }}
-                                >
-                                    {hasData ? total : '–'}
-                                </div>
+
                                 {hasData && (
                                     <div className="director-summary-breakdown">
                                         <span>P: {calculateCategorySum(ev, 'portrait')}</span>
@@ -131,11 +125,6 @@ export default function DirectorDetailView({
                                                     <span className="director-score-value">
                                                         {hasData ? (score ?? 0) : '–'}
                                                     </span>
-                                                    {penalties.map(pKey => (
-                                                        <div key={pKey} className="director-penalty-text" title={PENALTY_LABELS[pKey] || pKey}>
-                                                            {PENALTY_LABELS[pKey] || pKey}
-                                                        </div>
-                                                    ))}
                                                 </div>
                                             );
                                         })}
@@ -174,41 +163,7 @@ export default function DirectorDetailView({
                     </div>
                 ))}
 
-                {/* Grand total bar */}
-                <div className="director-grand-total">
-                    {evaluatorIds.map(eid => {
-                        const ev = evals[eid];
-                        const total = calculateTotalSum(ev);
-                        const meta = EVALUATOR_META[eid];
-                        const hasData = ev != null;
-                        return (
-                            <div
-                                key={eid}
-                                className="director-grand-total-item"
-                                style={{
-                                    borderColor: meta.borderColor,
-                                    background: meta.bg,
-                                }}
-                            >
-                                <span className="director-grand-total-label" style={{ color: meta.color }}>
-                                    {meta.shortName}
-                                </span>
-                                <span
-                                    className="director-grand-total-value"
-                                    style={{ color: hasData ? meta.color : 'var(--text-muted)' }}
-                                >
-                                    {hasData ? total : '–'}
-                                </span>
-                            </div>
-                        );
-                    })}
-                    <div className="director-grand-total-item director-grand-total-sum">
-                        <span className="director-grand-total-label">Celkem</span>
-                        <span className="director-grand-total-value">
-                            {evaluatorIds.reduce((acc, eid) => acc + calculateTotalSum(evals[eid]), 0)}
-                        </span>
-                    </div>
-                </div>
+
 
                 {/* Bottom navigation */}
                 <div className="save-row" style={{ marginTop: '2rem' }}>
