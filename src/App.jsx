@@ -38,15 +38,18 @@ export default function App() {
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             const u = session?.user ?? null;
+            console.log("Supabase User Data:", u);
             setUser(u);
-            setRole(u?.app_metadata?.role || null);
+            const userRole = u?.app_metadata?.role || u?.user_metadata?.role || u?.role || null;
+            setRole(userRole);
             setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const u = session?.user ?? null;
             setUser(u);
-            setRole(u?.app_metadata?.role || null);
+            const userRole = u?.app_metadata?.role || u?.user_metadata?.role || u?.role || null;
+            setRole(userRole);
         });
 
         return () => subscription.unsubscribe();
@@ -125,8 +128,10 @@ export default function App() {
     const handleLogin = async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return error.message;
-        const userRole = data.user?.app_metadata?.role || null;
-        setUser(data.user);
+        const u = data.user;
+        const userRole = u?.app_metadata?.role || u?.user_metadata?.role || u?.role || null;
+        console.log("Login Success - User Role:", userRole);
+        setUser(u);
         setRole(userRole);
         return null;
     };
@@ -554,13 +559,23 @@ export default function App() {
                     </div>
                     <div style={{ marginBottom: '1.5rem' }}>
                         <p style={{ fontSize: '1.2rem', marginBottom: '0.75rem', color: 'var(--warning)' }}>⚠️ Role nebyla přiřazena</p>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                            Váš účet nemá přiřazenou roli.<br />
-                            Kontaktujte administrátora, aby nastavil<br />
-                            <code style={{ background: 'var(--bg-elevated)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
-                                app_metadata.role
-                            </code>
-                            {' '}pro váš účet v Supabase.
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+                            Váš účet (<b>{user?.email}</b>) nemá v Supabase nastavenou roli.<br />
+                        </p>
+
+                        <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>// Diagnostika dat z Supabase:</p>
+                            <pre style={{ color: '#aaa', whiteSpace: 'pre-wrap' }}>
+                                {JSON.stringify({
+                                    app_metadata: user?.app_metadata,
+                                    user_metadata: user?.user_metadata
+                                }, null, 2)}
+                            </pre>
+                        </div>
+
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+                            Nastavte v Dashboardu roli jako:<br />
+                            <code>"role": "evaluator-1"</code> (nebo 2, 3, director)
                         </p>
                     </div>
                     <button className="btn btn-secondary" onClick={handleLogout}>
