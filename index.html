@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Talentové zkoušky - Hodnocení</title>
-  <script type="module" crossorigin src="/TalentWeb/assets/index-DaX9Wh_J.js"></script>
+  <script type="module" crossorigin src="/TalentWeb/assets/index-DUKis35K.js"></script>
   <link rel="stylesheet" crossorigin href="/TalentWeb/assets/index-l6oNGbhu.css">
 </head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <body>
     <div id="app">
         <!-- Login screen -->
@@ -37,6 +38,7 @@
             <!-- Overview screen -->
             <div id="overview-screen" class="content-screen">
                 <div class="overview-controls">
+                    <button id="export-btn" class="btn-secondary">Exportovat do Excel</button>
                     <input type="text" id="search-input" placeholder="Hledat podle kódu...">
                     <select id="sort-select">
                         <option value="code">Řadit podle kódu</option>
