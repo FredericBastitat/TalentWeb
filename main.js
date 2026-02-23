@@ -371,11 +371,18 @@ async function moveCandidate(index, direction) {
     const a = candidates[index];
     const b = candidates[targetIndex];
 
-    // Prohoď kódy
-    const { error: e1 } = await supabase.from('candidates').update({ code: b.code }).eq('id', a.id);
-    const { error: e2 } = await supabase.from('candidates').update({ code: a.code }).eq('id', b.id);
+    // Použij dočasný kód aby nedošlo ke konfliktu
+    const tempCode = `TEMP_${Date.now()}`;
 
-    if (e1 || e2) { alert('Chyba při přesunu'); return; }
+    const { error: e0 } = await supabase.from('candidates').update({ code: tempCode }).eq('id', a.id);
+    if (e0) { alert('Chyba při přesunu'); return; }
+
+    const { error: e1 } = await supabase.from('candidates').update({ code: a.code }).eq('id', b.id);
+    if (e1) { alert('Chyba při přesunu'); return; }
+
+    const { error: e2 } = await supabase.from('candidates').update({ code: b.code }).eq('id', a.id);
+    if (e2) { alert('Chyba při přesunu'); return; }
+
     await loadCandidates();
 }
 
