@@ -537,99 +537,205 @@ function exportToExcel() {
         return;
     }
 
-    const penaltyLabels = {
-        'wrong-count': 'Jiný počet fotografií',
-        'wrong-mounting': 'Nenalepené na podkladovém papíru',
-        'wrong-format': 'Jiný formát nebo orientace',
-        'wrong-genre': 'Nedodržení žánru',
-        'wrong-requirements': 'Nedodržení požadavků',
-        'uninteresting': 'Nezajímavý námět',
-        'low-creativity': 'Malá míra kreativity',
-        'inconsistent': 'Nekonzistentní soubor',
-        'wrong-rules': 'Nedodržení kompozičních pravidel',
-        'wrong-dof': 'Nevhodné použití hloubky ostrosti',
-        'wrong-crop': 'Chybné ořezy',
-        'mergers': 'Srostlice',
-        'distracting': 'Rušivé prvky',
-        'unsharp': 'Neostrá fotografie',
-        'exposure': 'Nevhodná expozice',
-        'white-balance': 'Špatné vyvážení bílé',
-        'resolution': 'Malé rozlišení nebo šum',
-        'editing': 'Nevhodná editace',
-        'relevance': 'Jasná souvislost s tématem'
+    const penaltyCodes = {
+        'wrong-count': 'A',
+        'wrong-mounting': 'B',
+        'wrong-format': 'C',
+        'wrong-genre': 'D',
+        'wrong-requirements': 'E',
+        'uninteresting': 'F',
+        'low-creativity': 'G',
+        'inconsistent': 'H',
+        'wrong-rules': 'A',
+        'wrong-dof': 'B',
+        'wrong-crop': 'C',
+        'mergers': 'D',
+        'distracting': 'E',
+        'unsharp': 'A',
+        'exposure': 'B',
+        'white-balance': 'C',
+        'resolution': 'D',
+        'editing': 'E',
+        'relevance': 'A'
     };
 
-    const criterionLabels = {
-        'formal': 'Formální pravidla',
-        'genre': 'Žánr',
-        'creativity': 'Kreativita',
-        'composition': 'Kompozice',
-        'technical': 'Technická kvalita',
-        'relevance': 'Souvislost s tématem'
+    const getCellValue = (candidate, category, criterion) => {
+        const ev = candidate.evaluation?.[category];
+        if (!ev) return '';
+        const score = ev[criterion] ?? '';
+        const penalties = ev.penalties?.[criterion] || [];
+        const codes = penalties.map(p => penaltyCodes[p] || '?').join(',');
+        return score !== '' ? `${score}${codes ? '\n' + codes : ''}` : '';
     };
-
-    const getPenalties = (evaluation, category) => {
-        const penalties = evaluation?.[category]?.penalties || {};
-        return Object.entries(penalties).map(([criterion, values]) => {
-            const criterionName = criterionLabels[criterion] || criterion;
-            const penaltyNames = values.map(v => penaltyLabels[v] || v).join(', ');
-            return `${criterionName}: ${penaltyNames}`;
-        }).join('\n');
-    };
-
-    const data = candidates.map(c => {
-        const ev = c.evaluation || {};
-        return {
-            'Kód': c.code || '',
-            'Portrét': calculateCategorySum(c, 'portrait'),
-            'Poznámky - Portrét': getPenalties(ev, 'portrait'),
-            'Soubor': calculateCategorySum(c, 'file'),
-            'Poznámky - Soubor': getPenalties(ev, 'file'),
-            'Zátiší': calculateCategorySum(c, 'still-life'),
-            'Poznámky - Zátiší': getPenalties(ev, 'still-life'),
-            'Celkem': calculateCategorySum(c, 'portrait') + calculateCategorySum(c, 'file') + calculateCategorySum(c, 'still-life')
-        };
-    });
-
-    const ws = XLSX.utils.json_to_sheet(data);
-
-    // Šířky sloupců
-    ws['!cols'] = [
-        { wch: 8 },   // Kód
-        { wch: 10 },  // Portrét
-        { wch: 40 },  // Poznámky Portrét
-        { wch: 10 },  // Soubor
-        { wch: 40 },  // Poznámky Soubor
-        { wch: 10 },  // Zátiší
-        { wch: 40 },  // Poznámky Zátiší
-        { wch: 10 },  // Celkem
-    ];
-
-    // Styl hlavičky
-    const headerStyle = {
-        font: { bold: true, color: { rgb: 'FFFFFF' } },
-        fill: { fgColor: { rgb: '2563EB' } },
-        alignment: { horizontal: 'center' }
-    };
-
-    const headers = ['A1','B1','C1','D1','E1','F1','G1','H1'];
-    headers.forEach(cell => {
-        if (ws[cell]) ws[cell].s = headerStyle;
-    });
-
-    // Zalamování textu v poznámkách
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for (let R = 1; R <= range.e.r; R++) {
-        ['C','E','G'].forEach(col => {
-            const cell = ws[`${col}${R+1}`];
-            if (cell) cell.s = { alignment: { wrapText: true, vertical: 'top' } };
-        });
-    }
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Uchazeči');
+    const ws = {};
+
+    // Definice kategorií a kritérií
+    const categories = [
+        {
+            name: 'PORTRÉT',
+            key: 'portrait',
+            criteria: [
+                { key: 'formal', label: 'formální' },
+                { key: 'genre', label: 'žánr/název' },
+                { key: 'creativity', label: 'kreativita' },
+                { key: 'composition', label: 'kompozice' },
+                { key: 'technical', label: 'technicita' },
+            ]
+        },
+        {
+            name: 'SOUBOR',
+            key: 'file',
+            criteria: [
+                { key: 'formal', label: 'formální' },
+                { key: 'relevance', label: 'žánr/název' },
+                { key: 'creativity', label: 'kreativita' },
+                { key: 'composition', label: 'kompozice' },
+                { key: 'technical', label: 'technicita' },
+            ]
+        },
+        {
+            name: 'ZÁTIŠÍ',
+            key: 'still-life',
+            criteria: [
+                { key: 'formal', label: 'formální' },
+                { key: 'genre', label: 'žánr/název' },
+            ]
+        }
+    ];
+
+    // Legenda zkratek
+    const legendData = [
+        ['ZKRATKY DŮVODŮ'],
+        ['Formální pravidla:'],
+        ['A = Jiný počet fotografií'],
+        ['B = Nenalepené na podkladovém papíru'],
+        ['C = Jiný formát nebo orientace'],
+        [''],
+        ['Žánr:'],
+        ['D = Nedodržení žánru'],
+        ['E = Nedodržení požadavků'],
+        [''],
+        ['Kreativita:'],
+        ['F = Nezajímavý námět'],
+        ['G = Malá míra kreativity'],
+        ['H = Nekonzistentní soubor'],
+        [''],
+        ['Kompozice:'],
+        ['A = Nedodržení kompozičních pravidel'],
+        ['B = Nevhodné použití hloubky ostrosti'],
+        ['C = Chybné ořezy'],
+        ['D = Srostlice'],
+        ['E = Rušivé prvky'],
+        [''],
+        ['Technická kvalita:'],
+        ['A = Neostrá fotografie'],
+        ['B = Nevhodná expozice'],
+        ['C = Špatné vyvážení bílé'],
+        ['D = Malé rozlišení nebo šum'],
+        ['E = Nevhodná editace'],
+    ];
+
+    // Vypočítej sloupce
+    let col = 1; // 1-indexed
+    const colMap = []; // { category, criterion, colIndex }
+
+    // První sloupec = Kód
+    const codeCol = col++;
+
+    categories.forEach(cat => {
+        const vsudCol = col++;
+        colMap.push({ type: 'vsude', category: cat.key, colIndex: vsudCol });
+        cat.criteria.forEach(cr => {
+            colMap.push({ type: 'criterion', category: cat.key, criterion: cr.key, label: cr.label, colIndex: col });
+            col++;
+        });
+        colMap.push({ type: 'suma', category: cat.key, colIndex: col });
+        col++;
+    });
+
+    const totalCols = col - 1;
+
+    // Helper pro zápis buňky
+    const setCell = (r, c, v, s) => {
+        const addr = XLSX.utils.encode_cell({ r, c: c - 1 });
+        ws[addr] = { v, t: typeof v === 'number' ? 'n' : 's' };
+        if (s) ws[addr].s = s;
+    };
+
+    // Styly
+    const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'FFFF00' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+    const catHeaderStyle = { font: { bold: true }, alignment: { horizontal: 'center' }, border: { bottom: { style: 'thin' } } };
+    const sumaStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'FFFF00' } }, alignment: { horizontal: 'center' } };
+    const normalStyle = { alignment: { horizontal: 'center', vertical: 'top', wrapText: true } };
+
+    // Řádek 0: názvy kategorií (merge přes kritéria)
+    ws['!merges'] = [];
+
+    let catStartCol = codeCol + 1;
+    categories.forEach(cat => {
+        const catCols = 1 + cat.criteria.length + 1; // vsude + kritéria + suma
+        ws['!merges'].push({
+            s: { r: 0, c: catStartCol - 1 },
+            e: { r: 0, c: catStartCol + catCols - 2 }
+        });
+        setCell(1, catStartCol, cat.name, catHeaderStyle);
+        catStartCol += catCols;
+    });
+
+    // Řádek 1: záhlaví sloupců
+    setCell(2, codeCol, 'Kód', headerStyle);
+    colMap.forEach(entry => {
+        if (entry.type === 'vsude') setCell(2, entry.colIndex, 'všude\n0-1-2', headerStyle);
+        else if (entry.type === 'criterion') setCell(2, entry.colIndex, entry.label, headerStyle);
+        else if (entry.type === 'suma') setCell(2, entry.colIndex, 'SUMA', sumaStyle);
+    });
+
+    // Data řádky
+    candidates.forEach((candidate, i) => {
+        const row = i + 3;
+        setCell(row, codeCol, candidate.code || '', normalStyle);
+
+        colMap.forEach(entry => {
+            if (entry.type === 'vsude') {
+                // prázdné – uživatel vyplní ručně
+                setCell(row, entry.colIndex, '', normalStyle);
+            } else if (entry.type === 'criterion') {
+                const ev = candidate.evaluation?.[entry.category];
+                const score = ev?.[entry.criterion];
+                const penalties = ev?.penalties?.[entry.criterion] || [];
+                const codes = penalties.map(p => penaltyCodes[p] || '?').join(',');
+                const val = score !== undefined ? `${score}${codes ? ' ' + codes : ''}` : '';
+                setCell(row, entry.colIndex, val, normalStyle);
+            } else if (entry.type === 'suma') {
+                const sum = calculateCategorySum(candidate, entry.category);
+                setCell(row, entry.colIndex, sum, sumaStyle);
+            }
+        });
+    });
+
+    // Šířky sloupců
+    const colWidths = [{ wch: 6 }]; // Kód
+    colMap.forEach(entry => {
+        if (entry.type === 'suma' || entry.type === 'vsude') colWidths.push({ wch: 8 });
+        else colWidths.push({ wch: 10 });
+    });
+    ws['!cols'] = colWidths;
+
+    // Výška řádků pro záhlaví
+    ws['!rows'] = [{ hpt: 20 }, { hpt: 35 }];
+
+    ws['!ref'] = XLSX.utils.encode_range({ r: 0, c: 0 }, { r: candidates.length + 2, c: totalCols - 1 });
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Hodnocení');
+
+    // List s legendou
+    const wsLegend = XLSX.utils.aoa_to_sheet(legendData);
+    wsLegend['!cols'] = [{ wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, wsLegend, 'Legenda');
+
     XLSX.writeFile(wb, `TalentWeb_${currentYear.replace('/', '-')}.xlsx`);
 }
-
 // Initialize on load
 init();
