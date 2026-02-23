@@ -26,7 +26,10 @@ export default function UserManagementModal({ onClose, showToast }) {
         setLoading(true);
         try {
             const { data, error } = await supabase.functions.invoke('manage-users', {
-                body: { action: 'list' }
+                body: { action: 'list' },
+                headers: {
+                    Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+                }
             });
             if (error) throw error;
             if (data.success) {
@@ -45,7 +48,10 @@ export default function UserManagementModal({ onClose, showToast }) {
         setLoading(true);
         try {
             const { data, error } = await supabase.functions.invoke('manage-users', {
-                body: { action: 'create', userData: formData }
+                body: { action: 'create', userData: formData },
+                headers: {
+                    Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+                }
             });
 
             if (error) throw error;
