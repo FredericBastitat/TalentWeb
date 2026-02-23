@@ -9,6 +9,7 @@ import {
     calculateTotalSum,
 } from './constants';
 import LoginScreen from './components/LoginScreen';
+import { getRoleFromMetadata } from './utils/roleUtils';
 import AppHeader from './components/AppHeader';
 import OverviewScreen from './components/OverviewScreen';
 import EvaluationScreen from './components/EvaluationScreen';
@@ -38,18 +39,16 @@ export default function App() {
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             const u = session?.user ?? null;
-            console.log("Supabase User Data:", u);
+            console.log("Supabase Session User:", u);
             setUser(u);
-            const userRole = u?.app_metadata?.role || u?.user_metadata?.role || u?.role || null;
-            setRole(userRole);
+            setRole(getRoleFromMetadata(u));
             setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const u = session?.user ?? null;
             setUser(u);
-            const userRole = u?.app_metadata?.role || u?.user_metadata?.role || u?.role || null;
-            setRole(userRole);
+            setRole(getRoleFromMetadata(u));
         });
 
         return () => subscription.unsubscribe();
@@ -129,7 +128,7 @@ export default function App() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return error.message;
         const u = data.user;
-        const userRole = u?.app_metadata?.role || u?.user_metadata?.role || u?.role || null;
+        const userRole = getRoleFromMetadata(u);
         console.log("Login Success - User Role:", userRole);
         setUser(u);
         setRole(userRole);
