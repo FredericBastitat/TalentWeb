@@ -1066,9 +1066,7 @@ body::before {
 }
 
 /* === Director Detail View === */
-.director-detail {
-    /* inherits eval-form styles */
-}
+
 
 .director-readonly-badge {
     font-size: 0.8rem;
@@ -1176,11 +1174,24 @@ body::before {
 
 .director-criterion-score {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
+    justify-content: flex-start;
+    gap: 0.15rem;
+    min-height: 40px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+}
+
+.director-penalty-text {
+    font-size: 0.6rem;
+    line-height: 1.1;
+    font-style: italic;
+    color: var(--danger);
+    text-align: center;
+    max-width: 80px;
+    white-space: normal;
+    word-wrap: break-word;
 }
 
 .director-score-value {

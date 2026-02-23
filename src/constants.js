@@ -208,6 +208,28 @@ export const PENALTY_CODES = {
     'relevance': 'A',
 };
 
+export const PENALTY_LABELS = {
+    'wrong-count': 'Jiný počet fotografií',
+    'wrong-mounting': 'Nenalepené na podkladovém papíru',
+    'wrong-format': 'Jiný formát nebo orientace',
+    'wrong-genre': 'Nedodržení žánru',
+    'wrong-requirements': 'Nedodržení požadavků',
+    'uninteresting': 'Nezajímavý námět',
+    'low-creativity': 'Malá míra kreativity',
+    'inconsistent': 'Nekonzistentní soubor',
+    'wrong-rules': 'Nedodržení kompozičních pravidel',
+    'wrong-dof': 'Nevhodné použití hloubky ostrosti',
+    'wrong-crop': 'Chybné ořezy',
+    'mergers': 'Srostlice',
+    'distracting': 'Rušivé prvky',
+    'unsharp': 'Neostrá fotografie',
+    'exposure': 'Nevhodná expozice',
+    'white-balance': 'Špatné vyvážení bílé',
+    'resolution': 'Malé rozlišení nebo šum',
+    'editing': 'Nevhodná editace',
+    'relevance': 'Není souvislost s tématem',
+};
+
 // Helper: calculate category sum from evaluation data
 export const calculateCategorySum = (evaluation, category) => {
     if (!evaluation || !evaluation[category]) return 0;

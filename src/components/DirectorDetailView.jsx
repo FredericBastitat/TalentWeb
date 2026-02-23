@@ -1,5 +1,5 @@
 import React from 'react';
-import { CATEGORIES, EVALUATOR_META, calculateCategorySum, calculateTotalSum } from '../constants';
+import { CATEGORIES, EVALUATOR_META, calculateCategorySum, calculateTotalSum, PENALTY_LABELS } from '../constants';
 
 export default function DirectorDetailView({
     candidates,
@@ -131,11 +131,11 @@ export default function DirectorDetailView({
                                                     <span className="director-score-value">
                                                         {hasData ? (score ?? 0) : '–'}
                                                     </span>
-                                                    {penalties.length > 0 && (
-                                                        <span className="director-penalty-indicator" title={penalties.join(', ')}>
-                                                            ⚠
-                                                        </span>
-                                                    )}
+                                                    {penalties.map(pKey => (
+                                                        <div key={pKey} className="director-penalty-text" title={PENALTY_LABELS[pKey] || pKey}>
+                                                            {PENALTY_LABELS[pKey] || pKey}
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             );
                                         })}
