@@ -529,5 +529,31 @@ function collectCategoryData(category) {
     return data;
 }
 
+document.getElementById('export-btn').addEventListener('click', exportToExcel);
+
+function exportToExcel() {
+    if (!currentYear || candidates.length === 0) {
+        alert('Nejsou žádní uchazeči k exportu');
+        return;
+    }
+
+    const data = candidates.map(c => ({
+        'Kód': c.code || '',
+        'Portrét': calculateCategorySum(c, 'portrait'),
+        'Soubor': calculateCategorySum(c, 'file'),
+        'Zátiší': calculateCategorySum(c, 'still-life'),
+        'Celkem': calculateCategorySum(c, 'portrait') + calculateCategorySum(c, 'file') + calculateCategorySum(c, 'still-life')
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Uchazeči');
+
+    // Šířky sloupců
+    ws['!cols'] = [{ wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+
+    XLSX.writeFile(wb, `TalentWeb_${currentYear.replace('/', '-')}.xlsx`);
+}
+
 // Initialize on load
 init();
