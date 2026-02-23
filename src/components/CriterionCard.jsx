@@ -26,21 +26,22 @@ export default function CriterionCard({
             </div>
 
             {criterion.penalties && criterion.penalties.length > 0 && (
-                <div className="penalty-section">
-                    {criterion.penalties.map(penalty => (
-                        <label className="penalty-label" key={penalty.value}>
-                            <input
-                                type="checkbox"
-                                className="penalty-checkbox"
-                                checked={checkedPenalties.includes(penalty.value)}
-                                onChange={(e) =>
-                                    onPenaltyChange(categoryKey, criterion.key, penalty.value, e.target.checked)
-                                }
+                <div className="penalty-chips-container">
+                    {criterion.penalties.map(penalty => {
+                        const isChecked = checkedPenalties.includes(penalty.value);
+                        return (
+                            <button
+                                key={penalty.value}
+                                type="button"
+                                className={`penalty-chip ${isChecked ? 'active' : ''}`}
+                                onClick={() => onPenaltyChange(categoryKey, criterion.key, penalty.value, !isChecked)}
                                 disabled={disabled}
-                            />
-                            {penalty.label}
-                        </label>
-                    ))}
+                            >
+                                <span className="chip-icon">{isChecked ? '✓' : '＋'}</span>
+                                {penalty.label}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>
