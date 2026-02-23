@@ -61,6 +61,24 @@ Deno.serve(async (req) => {
             })
         }
 
+        if (action === 'delete') {
+            const { userId } = userData
+            if (!userId) throw new Error('Missing userId')
+
+            // Prevent self-deletion
+            if (userId === requester.id) {
+                throw new Error('Nemůžete smazat svůj vlastní účet')
+            }
+
+            const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+            if (error) throw error
+
+            return new Response(JSON.stringify({ success: true }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
         throw new Error('Unknown action')
 
     } catch (err) {

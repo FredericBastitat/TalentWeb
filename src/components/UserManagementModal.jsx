@@ -68,6 +68,30 @@ export default function UserManagementModal({ onClose, showToast }) {
         }
     };
 
+    const handleDeleteUser = async (userId, userEmail) => {
+        if (!window.confirm(`Opravdu chcete smazat uživatele ${userEmail}?`)) return;
+
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('manage-users', {
+                body: { action: 'delete', userData: { userId } },
+                headers: {
+                    Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+                }
+            });
+
+            if (error) throw error;
+            if (!data.success) throw new Error(data.error);
+
+            showToast('Uživatel smazán', 'success');
+            fetchUsers();
+        } catch (err) {
+            showToast(err.message || 'Chyba při mazání', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="modal-overlay">
             <div className="modal-card animate-slide-up" style={{ maxWidth: '600px' }}>
@@ -95,6 +119,7 @@ export default function UserManagementModal({ onClose, showToast }) {
                                             <tr>
                                                 <th style={{ padding: '0.5rem' }}>Email</th>
                                                 <th style={{ padding: '0.5rem' }}>Role</th>
+                                                <th style={{ padding: '0.5rem', textAlign: 'right' }}>Akce</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -110,6 +135,21 @@ export default function UserManagementModal({ onClose, showToast }) {
                                                             }}>
                                                             {u.role}
                                                         </span>
+                                                    </td>
+                                                    <td style={{ padding: '0.6rem', textAlign: 'right' }}>
+                                                        <button
+                                                            className="btn btn-secondary"
+                                                            style={{
+                                                                padding: '0.2rem 0.5rem',
+                                                                fontSize: '0.75rem',
+                                                                borderColor: 'rgba(239, 68, 68, 0.4)',
+                                                                color: '#ef4444'
+                                                            }}
+                                                            onClick={() => handleDeleteUser(u.id, u.email)}
+                                                            disabled={loading}
+                                                        >
+                                                            Smazat
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))}
