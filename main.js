@@ -229,12 +229,26 @@ function renderCandidatesTable() {
             <td>${fileSum}</td>
             <td>${stillLifeSum}</td>
             <td><strong>${total}</strong></td>
-            <td><a href="#" class="btn-link" data-index="${index}">Upravit</a></td>
+            <td>
+                <a href="#" class="btn-link" data-index="${index}">Upravit</a>
+                <a href="#" class="btn-link" style="margin-left: 0.5rem;" data-up="${index}">↑</a>
+                <a href="#" class="btn-link" style="margin-left: 0.5rem;" data-down="${index}">↓</a>
+            </td>
         `;
 
-        row.querySelector('.btn-link').addEventListener('click', (e) => {
+        row.querySelector('[data-index]').addEventListener('click', (e) => {
             e.preventDefault();
             openEvaluation(index);
+        });
+
+        row.querySelector('[data-up]')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await moveCandidate(parseInt(e.target.dataset.up), -1);
+        });
+
+        row.querySelector('[data-down]')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await moveCandidate(parseInt(e.target.dataset.down), 1);
         });
 
         candidatesTbody.appendChild(row);
@@ -308,24 +322,34 @@ async function handleAddCandidate() {
         return;
     }
 
-    const countStr = prompt('Zadejte počet uchazečů:');
-    if (!countStr) return;
-    const count = parseInt(countStr);
-    if (isNaN(count) || count < 1) {
-        alert('Neplatný počet');
-        return;
-    }
+    if (candidates.length === 0) {
+        // Inicializace ročníku
+        const countStr = prompt('Kolik uchazečů má tento ročník?');
+        if (!countStr) return;
+        const count = parseInt(countStr);
+        if (isNaN(count) || count < 1) {
+            alert('Neplatný počet');
+            return;
+        }
 
-    // Zjisti aktuální nejvyšší číslo
-    const existingNumbers = candidates
-        .map(c => parseInt((c.code || '').replace('F', '')))
-        .filter(n => !isNaN(n));
-    let nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+        const newCandidates = Array.from({ length: count }, (_, i) => ({
+            code: `F${String(i + 1).padStart(3, '0')}`,
+            school_year: currentYear,
+            evaluation: {
+                portrait: { formal: 0 },
+                file: { formal: 0 },
+                'still-life': { formal: 0 }
+            }
+        }));
 
-    const newCandidates = [];
-    for (let i = 0; i < count; i++) {
-        newCandidates.push({
-            code: `F${String(nextNumber + i).padStart(3, '0')}`,
+        const { error } = await supabase.from('candidates').insert(newCandidates);
+        if (error) { alert('Chyba: ' + error.message); return; }
+        await loadCandidates();
+    } else {
+        // Přidat jednoho navíc
+        const nextNumber = candidates.length + 1;
+        const { error } = await supabase.from('candidates').insert({
+            code: `F${String(nextNumber).padStart(3, '0')}`,
             school_year: currentYear,
             evaluation: {
                 portrait: { formal: 0 },
@@ -333,17 +357,25 @@ async function handleAddCandidate() {
                 'still-life': { formal: 0 }
             }
         });
+        if (error) { alert('Chyba: ' + error.message); return; }
+        await loadCandidates();
     }
+}
 
-    const { error } = await supabase
-        .from('candidates')
-        .insert(newCandidates);
 
-    if (error) {
-        alert('Chyba při vytváření uchazečů: ' + error.message);
-        return;
-    }
 
+async function moveCandidate(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= candidates.length) return;
+
+    const a = candidates[index];
+    const b = candidates[targetIndex];
+
+    // Prohoď kódy
+    const { error: e1 } = await supabase.from('candidates').update({ code: b.code }).eq('id', a.id);
+    const { error: e2 } = await supabase.from('candidates').update({ code: a.code }).eq('id', b.id);
+
+    if (e1 || e2) { alert('Chyba při přesunu'); return; }
     await loadCandidates();
 }
 
