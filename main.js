@@ -236,15 +236,15 @@ async function handleManageCandidates() {
         const { error } = await supabase.from('candidates').insert(newCandidates);
         if (error) { alert('Chyba: ' + error.message); return; }
 
-    } else if (newCount < currentCount) {
-        // Smazat přebývající uchazeče od konce
-        if (!confirm(`Opravdu chcete smazat ${currentCount - newCount} uchazečů od konce? Tato akce je nevratná.`)) return;
-    // Seřaď podle kódu a smaž od konce
+} else if (newCount < currentCount) {
+    if (!confirm(`Opravdu chcete smazat ${currentCount - newCount} uchazečů od konce? Tato akce je nevratná.`)) return;
     const sorted = [...candidates].sort((a, b) => (a.code || '').localeCompare(b.code || ''));
     const toDelete = sorted.slice(newCount).map(c => c.id);
+    console.log('Mažu IDs:', toDelete);
     const { error } = await supabase.from('candidates').delete().in('id', toDelete);
-        if (error) { alert('Chyba: ' + error.message); return; }
-    }
+    console.log('Error:', error);
+    if (error) { alert('Chyba: ' + error.message); return; }
+}
 
     await loadCandidates();
 }
