@@ -195,7 +195,7 @@ export default function App() {
         }
     };
 
-    // Excel export – same logic as original
+    // Excel export – improved formatting with separate score/penalty columns
     const exportToExcel = () => {
         if (!currentYear || candidates.length === 0) {
             alert('Nejsou žádní uchazeči k exportu');
@@ -212,137 +212,271 @@ export default function App() {
             'resolution': 'D', 'editing': 'E', 'relevance': 'A'
         };
 
-        const wb = XLSX.utils.book_new();
-        const ws = {};
-
         const categories = [
             {
-                name: 'PORTRÉT', key: 'portrait',
+                name: 'PORTRÉT', key: 'portrait', color: '4472C4',
                 criteria: [
-                    { key: 'formal', label: 'formální' },
-                    { key: 'genre', label: 'žánr/název' },
-                    { key: 'creativity', label: 'kreativita' },
-                    { key: 'composition', label: 'kompozice' },
-                    { key: 'technical', label: 'technicita' },
+                    { key: 'formal', label: 'Formální' },
+                    { key: 'genre', label: 'Žánr' },
+                    { key: 'creativity', label: 'Kreativita' },
+                    { key: 'composition', label: 'Kompozice' },
+                    { key: 'technical', label: 'Technika' },
                 ]
             },
             {
-                name: 'SOUBOR', key: 'file',
+                name: 'SOUBOR', key: 'file', color: '548235',
                 criteria: [
-                    { key: 'formal', label: 'formální' },
-                    { key: 'relevance', label: 'žánr/název' },
-                    { key: 'creativity', label: 'kreativita' },
-                    { key: 'composition', label: 'kompozice' },
-                    { key: 'technical', label: 'technicita' },
+                    { key: 'formal', label: 'Formální' },
+                    { key: 'relevance', label: 'Souvislost' },
+                    { key: 'creativity', label: 'Kreativita' },
+                    { key: 'composition', label: 'Kompozice' },
+                    { key: 'technical', label: 'Technika' },
                 ]
             },
             {
-                name: 'ZÁTIŠÍ', key: 'still-life',
+                name: 'ZÁTIŠÍ', key: 'still-life', color: 'BF8F00',
                 criteria: [
-                    { key: 'formal', label: 'formální' },
-                    { key: 'genre', label: 'žánr/název' },
+                    { key: 'formal', label: 'Formální' },
+                    { key: 'genre', label: 'Žánr' },
                 ]
             }
         ];
 
         const legendData = [
-            ['ZKRATKY DŮVODŮ'], ['Formální pravidla:'],
-            ['A = Jiný počet fotografií'], ['B = Nenalepené na podkladovém papíru'],
-            ['C = Jiný formát nebo orientace'], [''],
-            ['Žánr:'], ['D = Nedodržení žánru'], ['E = Nedodržení požadavků'], [''],
-            ['Kreativita:'], ['F = Nezajímavý námět'], ['G = Malá míra kreativity'],
-            ['H = Nekonzistentní soubor'], [''],
-            ['Kompozice:'], ['A = Nedodržení kompozičních pravidel'],
-            ['B = Nevhodné použití hloubky ostrosti'], ['C = Chybné ořezy'],
-            ['D = Srostlice'], ['E = Rušivé prvky'], [''],
-            ['Technická kvalita:'], ['A = Neostrá fotografie'],
-            ['B = Nevhodná expozice'], ['C = Špatné vyvážení bílé'],
-            ['D = Malé rozlišení nebo šum'], ['E = Nevhodná editace'],
+            ['ZKRATKY DŮVODŮ PENALIZACE'],
+            [''],
+            ['FORMÁLNÍ PRAVIDLA:'],
+            ['  A = Jiný počet fotografií'],
+            ['  B = Nenalepené na podkladovém papíru'],
+            ['  C = Jiný formát nebo orientace'],
+            [''],
+            ['ŽÁNR:'],
+            ['  D = Nedodržení žánru'],
+            ['  E = Nedodržení požadavků'],
+            [''],
+            ['KREATIVITA:'],
+            ['  F = Nezajímavý námět'],
+            ['  G = Malá míra kreativity'],
+            ['  H = Nekonzistentní soubor'],
+            [''],
+            ['KOMPOZICE:'],
+            ['  A = Nedodržení kompozičních pravidel'],
+            ['  B = Nevhodné použití hloubky ostrosti'],
+            ['  C = Chybné ořezy'],
+            ['  D = Srostlice'],
+            ['  E = Rušivé prvky'],
+            [''],
+            ['TECHNICKÁ KVALITA:'],
+            ['  A = Neostrá fotografie'],
+            ['  B = Nevhodná expozice'],
+            ['  C = Špatné vyvážení bílé'],
+            ['  D = Malé rozlišení nebo šum'],
+            ['  E = Nevhodná editace'],
         ];
 
-        let col = 1;
+        // --- Border helper ---
+        const thinBorder = { style: 'thin', color: { rgb: 'B0B0B0' } };
+        const borders = {
+            top: thinBorder, bottom: thinBorder,
+            left: thinBorder, right: thinBorder,
+        };
+
+        // --- Build column layout ---
+        // Each criterion → 2 columns: "body" (score) + "chyby" (penalty letters)
+        // Format: KÓD | [cat: body chyby body chyby ... | SUMA] | ... | CELKEM
+        let colIdx = 0; // 0-indexed
         const colMap = [];
-        const codeCol = col++;
+        const merges = [];
+
+        const codeCol = colIdx++;
 
         categories.forEach(cat => {
-            const vsudCol = col++;
-            colMap.push({ type: 'vsude', category: cat.key, colIndex: vsudCol });
+            const catStartCol = colIdx;
+
             cat.criteria.forEach(cr => {
-                colMap.push({ type: 'criterion', category: cat.key, criterion: cr.key, label: cr.label, colIndex: col });
-                col++;
+                colMap.push({ type: 'score', category: cat.key, criterion: cr.key, label: cr.label, col: colIdx, catColor: cat.color });
+                colIdx++;
+                colMap.push({ type: 'penalty', category: cat.key, criterion: cr.key, col: colIdx, catColor: cat.color });
+                colIdx++;
             });
-            colMap.push({ type: 'suma', category: cat.key, colIndex: col });
-            col++;
+
+            colMap.push({ type: 'suma', category: cat.key, col: colIdx, catColor: cat.color });
+            colIdx++;
+
+            const catEndCol = colIdx - 1;
+
+            // Merge for category header (row 0)
+            merges.push({ s: { r: 0, c: catStartCol }, e: { r: 0, c: catEndCol } });
         });
 
-        const totalCols = col - 1;
+        // CELKEM column
+        const totalCol = colIdx;
+        colIdx++;
 
+        const totalColsCount = colIdx;
+
+        // --- Helper to write cell ---
+        const ws = {};
         const setCell = (r, c, v, s) => {
-            const addr = XLSX.utils.encode_cell({ r, c: c - 1 });
+            const addr = XLSX.utils.encode_cell({ r, c });
             ws[addr] = { v, t: typeof v === 'number' ? 'n' : 's' };
             if (s) ws[addr].s = s;
         };
 
-        const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'FFFF00' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
-        const catHeaderStyle = { font: { bold: true }, alignment: { horizontal: 'center' }, border: { bottom: { style: 'thin' } } };
-        const sumaStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'FFFF00' } }, alignment: { horizontal: 'center' } };
-        const normalStyle = { alignment: { horizontal: 'center', vertical: 'top', wrapText: true } };
+        // === ROW 0: Category headers ===
+        // KÓD spans rows 0+1
+        merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
+        setCell(0, 0, 'Kód', {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '333333' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: borders,
+        });
 
-        ws['!merges'] = [];
+        // CELKEM spans rows 0+1
+        merges.push({ s: { r: 0, c: totalCol }, e: { r: 1, c: totalCol } });
+        setCell(0, totalCol, 'CELKEM', {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '7030A0' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: borders,
+        });
 
-        let catStartCol = codeCol + 1;
         categories.forEach(cat => {
-            const catCols = 1 + cat.criteria.length + 1;
-            ws['!merges'].push({
-                s: { r: 0, c: catStartCol - 1 },
-                e: { r: 0, c: catStartCol + catCols - 2 }
+            // Find first col of this category
+            const firstEntry = colMap.find(e => e.category === cat.key);
+            if (!firstEntry) return;
+            setCell(0, firstEntry.col, cat.name, {
+                font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 12 },
+                fill: { fgColor: { rgb: cat.color } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: borders,
             });
-            setCell(1, catStartCol, cat.name, catHeaderStyle);
-            catStartCol += catCols;
         });
 
-        setCell(2, codeCol, 'Kód', headerStyle);
+        // === ROW 1: Sub-headers (criterion labels) ===
         colMap.forEach(entry => {
-            if (entry.type === 'vsude') setCell(2, entry.colIndex, 'všude\n0-1-2', headerStyle);
-            else if (entry.type === 'criterion') setCell(2, entry.colIndex, entry.label, headerStyle);
-            else if (entry.type === 'suma') setCell(2, entry.colIndex, 'SUMA', sumaStyle);
+            const lightColor = entry.catColor.replace(/(.{2})(.{2})(.{2})/, (_, r, g, b) => {
+                const lighten = (hex) => Math.min(255, parseInt(hex, 16) + 80).toString(16).padStart(2, '0');
+                return lighten(r) + lighten(g) + lighten(b);
+            }).toUpperCase();
+
+            if (entry.type === 'score') {
+                setCell(1, entry.col, entry.label, {
+                    font: { bold: true, sz: 9, color: { rgb: 'FFFFFF' } },
+                    fill: { fgColor: { rgb: entry.catColor } },
+                    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+                    border: borders,
+                });
+            } else if (entry.type === 'penalty') {
+                setCell(1, entry.col, 'chyby', {
+                    font: { italic: true, sz: 8, color: { rgb: 'FFFFFF' } },
+                    fill: { fgColor: { rgb: lightColor } },
+                    alignment: { horizontal: 'center', vertical: 'center' },
+                    border: borders,
+                });
+            } else if (entry.type === 'suma') {
+                setCell(1, entry.col, 'SUMA', {
+                    font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+                    fill: { fgColor: { rgb: entry.catColor } },
+                    alignment: { horizontal: 'center', vertical: 'center' },
+                    border: borders,
+                });
+            }
         });
 
+        // === DATA ROWS (starting at row 2) ===
         candidates.forEach((candidate, i) => {
-            const row = i + 3;
-            setCell(row, codeCol, candidate.code || '', normalStyle);
+            const row = i + 2;
+            const isEven = i % 2 === 0;
+            const rowBg = isEven ? 'F5F5F5' : 'FFFFFF';
+
+            // Kód
+            setCell(row, codeCol, candidate.code || '', {
+                font: { bold: true, sz: 10 },
+                fill: { fgColor: { rgb: rowBg } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: borders,
+            });
 
             colMap.forEach(entry => {
-                if (entry.type === 'vsude') {
-                    setCell(row, entry.colIndex, '', normalStyle);
-                } else if (entry.type === 'criterion') {
+                if (entry.type === 'score') {
                     const ev = candidate.evaluation?.[entry.category];
                     const score = ev?.[entry.criterion];
+                    setCell(row, entry.col, score !== undefined ? score : '', {
+                        font: { sz: 10 },
+                        fill: { fgColor: { rgb: rowBg } },
+                        alignment: { horizontal: 'center', vertical: 'center' },
+                        border: borders,
+                    });
+                } else if (entry.type === 'penalty') {
+                    const ev = candidate.evaluation?.[entry.category];
                     const penalties = ev?.penalties?.[entry.criterion] || [];
-                    const codes = penalties.map(p => penaltyCodes[p] || '?').join(',');
-                    const val = score !== undefined ? `${score}${codes ? ' ' + codes : ''}` : '';
-                    setCell(row, entry.colIndex, val, normalStyle);
+                    const codes = penalties.map(p => penaltyCodes[p] || '?').join(', ');
+                    setCell(row, entry.col, codes, {
+                        font: { sz: 9, color: { rgb: codes ? 'CC0000' : '999999' } },
+                        fill: { fgColor: { rgb: rowBg } },
+                        alignment: { horizontal: 'center', vertical: 'center' },
+                        border: borders,
+                    });
                 } else if (entry.type === 'suma') {
                     const sum = calculateCategorySum(candidate, entry.category);
-                    setCell(row, entry.colIndex, sum, sumaStyle);
+                    const lightCatBg = entry.catColor.replace(/(.{2})(.{2})(.{2})/, (_, r, g, b) => {
+                        const lighten = (hex) => Math.min(255, parseInt(hex, 16) + 140).toString(16).padStart(2, '0');
+                        return lighten(r) + lighten(g) + lighten(b);
+                    }).toUpperCase();
+                    setCell(row, entry.col, sum, {
+                        font: { bold: true, sz: 11 },
+                        fill: { fgColor: { rgb: lightCatBg } },
+                        alignment: { horizontal: 'center', vertical: 'center' },
+                        border: borders,
+                    });
                 }
+            });
+
+            // CELKEM
+            const portraitSum = calculateCategorySum(candidate, 'portrait');
+            const fileSum = calculateCategorySum(candidate, 'file');
+            const slSum = calculateCategorySum(candidate, 'still-life');
+            const grandTotal = portraitSum + fileSum + slSum;
+
+            setCell(row, totalCol, grandTotal, {
+                font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
+                fill: { fgColor: { rgb: '7030A0' } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: borders,
             });
         });
 
-        const colWidths = [{ wch: 6 }];
+        // === Column widths ===
+        const colWidths = [{ wch: 7 }]; // Kód
         colMap.forEach(entry => {
-            if (entry.type === 'suma' || entry.type === 'vsude') colWidths.push({ wch: 8 });
-            else colWidths.push({ wch: 10 });
+            if (entry.type === 'score') colWidths.push({ wch: 10 });
+            else if (entry.type === 'penalty') colWidths.push({ wch: 8 });
+            else if (entry.type === 'suma') colWidths.push({ wch: 7 });
         });
-        ws['!cols'] = colWidths;
-        ws['!rows'] = [{ hpt: 20 }, { hpt: 35 }];
-        ws['!ref'] = XLSX.utils.encode_range({ r: 0, c: 0 }, { r: candidates.length + 2, c: totalCols - 1 });
+        colWidths.push({ wch: 9 }); // CELKEM
 
+        // === Row heights ===
+        const rowHeights = [{ hpt: 28 }, { hpt: 24 }]; // header rows
+        candidates.forEach(() => rowHeights.push({ hpt: 20 }));
+
+        // === Finalize worksheet ===
+        ws['!merges'] = merges;
+        ws['!cols'] = colWidths;
+        ws['!rows'] = rowHeights;
+        ws['!ref'] = XLSX.utils.encode_range(
+            { r: 0, c: 0 },
+            { r: candidates.length + 1, c: totalColsCount - 1 }
+        );
+
+        const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Hodnocení');
 
+        // === Legenda sheet ===
         const wsLegend = XLSX.utils.aoa_to_sheet(legendData);
-        wsLegend['!cols'] = [{ wch: 50 }];
-        XLSX.utils.book_append_sheet(wb, wsLegend, 'Legenda');
+        wsLegend['!cols'] = [{ wch: 55 }];
+        XLSX.utils.book_append_sheet(wb, wsLegend, 'Legenda zkratek');
 
         XLSX.writeFile(wb, `TalentWeb_${currentYear.replace('/', '-')}.xlsx`);
         showToast('Excel exportován ✓');
