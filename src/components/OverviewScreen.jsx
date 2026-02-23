@@ -96,9 +96,11 @@ export default function OverviewScreen({
     return (
         <div className="animate-fade-in">
             <div className="overview-toolbar">
-                <button className="btn btn-secondary" onClick={onExport}>
-                    📊 Exportovat Excel
-                </button>
+                {isDirector && (
+                    <button className="btn btn-secondary" onClick={onExport}>
+                        📊 Exportovat Excel
+                    </button>
+                )}
 
                 <div className="search-wrapper">
                     <span className="search-icon">🔍</span>

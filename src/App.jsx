@@ -268,46 +268,7 @@ export default function App() {
             [1, 2, 3].forEach(eid => {
                 exportEvaluatorSheet(wb, eid, EVALUATOR_META[eid].name);
             });
-        } else {
-            // Evaluator export: their own detailed sheet
-            exportEvaluatorSheet(wb, evaluatorId, EVALUATOR_META[evaluatorId].name);
         }
-
-        // Legend sheet
-        const legendData = [
-            ['ZKRATKY DŮVODŮ PENALIZACE'],
-            [''],
-            ['FORMÁLNÍ PRAVIDLA:'],
-            ['  A = Jiný počet fotografií'],
-            ['  B = Nenalepené na podkladovém papíru'],
-            ['  C = Jiný formát nebo orientace'],
-            [''],
-            ['ŽÁNR:'],
-            ['  D = Nedodržení žánru'],
-            ['  E = Nedodržení požadavků'],
-            [''],
-            ['KREATIVITA:'],
-            ['  F = Nezajímavý námět'],
-            ['  G = Malá míra kreativity'],
-            ['  H = Nekonzistentní soubor'],
-            [''],
-            ['KOMPOZICE:'],
-            ['  A = Nedodržení kompozičních pravidel'],
-            ['  B = Nevhodné použití hloubky ostrosti'],
-            ['  C = Chybné ořezy'],
-            ['  D = Srostlice'],
-            ['  E = Rušivé prvky'],
-            [''],
-            ['TECHNICKÁ KVALITA:'],
-            ['  A = Neostrá fotografie'],
-            ['  B = Nevhodná expozice'],
-            ['  C = Špatné vyvážení bílé'],
-            ['  D = Malé rozlišení nebo šum'],
-            ['  E = Nevhodná editace'],
-        ];
-        const wsLegend = XLSX.utils.aoa_to_sheet(legendData);
-        wsLegend['!cols'] = [{ wch: 55 }];
-        XLSX.utils.book_append_sheet(wb, wsLegend, 'Legenda zkratek');
 
         const suffix = isDirector ? 'všichni' : EVALUATOR_META[evaluatorId].shortName;
         XLSX.writeFile(wb, `TalentWeb_${currentYear.replace('/', '-')}_${suffix}.xlsx`);
@@ -375,8 +336,6 @@ export default function App() {
             cat.criteria.forEach(cr => {
                 colMap.push({ type: 'score', category: cat.key, criterion: cr.key, label: cr.label, col: colIdx, catColor: cat.color });
                 colIdx++;
-                colMap.push({ type: 'penalty', category: cat.key, criterion: cr.key, col: colIdx, catColor: cat.color });
-                colIdx++;
             });
             colMap.push({ type: 'suma', category: cat.key, col: colIdx, catColor: cat.color });
             colIdx++;
@@ -437,13 +396,6 @@ export default function App() {
                     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
                     border: borders,
                 });
-            } else if (entry.type === 'penalty') {
-                setCell(1, entry.col, 'chyby', {
-                    font: { italic: true, sz: 8, color: { rgb: 'FFFFFF' } },
-                    fill: { fgColor: { rgb: lightColor } },
-                    alignment: { horizontal: 'center', vertical: 'center' },
-                    border: borders,
-                });
             } else if (entry.type === 'suma') {
                 setCell(1, entry.col, 'SUMA', {
                     font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
@@ -473,15 +425,6 @@ export default function App() {
                     const score = ev?.[entry.category]?.[entry.criterion];
                     setCell(row, entry.col, score !== undefined ? score : '', {
                         font: { sz: 10 },
-                        fill: { fgColor: { rgb: rowBg } },
-                        alignment: { horizontal: 'center', vertical: 'center' },
-                        border: borders,
-                    });
-                } else if (entry.type === 'penalty') {
-                    const penalties = ev?.[entry.category]?.penalties?.[entry.criterion] || [];
-                    const codes = penalties.map(p => PENALTY_CODES[p] || '?').join(', ');
-                    setCell(row, entry.col, codes, {
-                        font: { sz: 9, color: { rgb: codes ? 'CC0000' : '999999' } },
                         fill: { fgColor: { rgb: rowBg } },
                         alignment: { horizontal: 'center', vertical: 'center' },
                         border: borders,
