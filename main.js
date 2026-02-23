@@ -430,17 +430,6 @@ function updateNavigationButtons() {
 
 // Score handling
 function handleScoreChange(e) {
-    const select = e.target;
-    const category = select.dataset.category;
-    const criterion = select.dataset.criterion;
-    const value = parseInt(select.value);
-
-    // If formal rules is set to 0, lock other criteria
-    if (criterion === 'formal' && value === 0) {
-        lockCategory(category);
-    } else if (criterion === 'formal' && value > 0) {
-        unlockCategory(category);
-    }
 
     updateSums();
 }
@@ -472,14 +461,6 @@ function unlockCategory(category) {
 }
 
 function updateDisabledStates() {
-    ['portrait', 'file', 'still-life'].forEach(category => {
-        const formalSelect = document.querySelector(`.score-select[data-category="${category}"][data-criterion="formal"]`);
-        if (formalSelect && parseInt(formalSelect.value) === 0) {
-            lockCategory(category);
-        } else {
-            unlockCategory(category);
-        }
-    });
 }
 
 function updateSums() {
