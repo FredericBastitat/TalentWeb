@@ -9,7 +9,6 @@ import {
     calculateTotalSum,
 } from './constants';
 import LoginScreen from './components/LoginScreen';
-import RoleSelector from './components/RoleSelector';
 import AppHeader from './components/AppHeader';
 import OverviewScreen from './components/OverviewScreen';
 import EvaluationScreen from './components/EvaluationScreen';
@@ -18,7 +17,7 @@ import Toast from './components/Toast';
 
 export default function App() {
     const [user, setUser] = useState(null);
-    const [role, setRole] = useState(() => localStorage.getItem('talentweb_role'));
+    const [role, setRole] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentYear, setCurrentYear] = useState('');
     const [candidates, setCandidates] = useState([]);
@@ -38,12 +37,16 @@ export default function App() {
     // ── Auth state ───────────────────────────────────────────────
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
+            const u = session?.user ?? null;
+            setUser(u);
+            setRole(u?.app_metadata?.role || null);
             setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+            const u = session?.user ?? null;
+            setUser(u);
+            setRole(u?.app_metadata?.role || null);
         });
 
         return () => subscription.unsubscribe();
@@ -119,25 +122,19 @@ export default function App() {
     };
 
     // ── Auth handlers ────────────────────────────────────────────
-    const handleLogin = async (email, password, selectedRole) => {
+    const handleLogin = async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return error.message;
+        const userRole = data.user?.app_metadata?.role || null;
         setUser(data.user);
-        setRole(selectedRole);
-        localStorage.setItem('talentweb_role', selectedRole);
+        setRole(userRole);
         return null;
-    };
-
-    const handleRoleSelect = (selectedRole) => {
-        setRole(selectedRole);
-        localStorage.setItem('talentweb_role', selectedRole);
     };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         setUser(null);
         setRole(null);
-        localStorage.removeItem('talentweb_role');
         setCurrentYear('');
         setCandidates([]);
         setEvaluationsMap({});
@@ -548,7 +545,30 @@ export default function App() {
     }
 
     if (!role) {
-        return <RoleSelector onSelect={handleRoleSelect} onLogout={handleLogout} />;
+        return (
+            <div className="login-screen">
+                <div className="login-card" style={{ textAlign: 'center' }}>
+                    <div className="login-logo">
+                        <div className="login-logo-icon">📷</div>
+                        <h1>TalentWeb</h1>
+                    </div>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <p style={{ fontSize: '1.2rem', marginBottom: '0.75rem', color: 'var(--warning)' }}>⚠️ Role nebyla přiřazena</p>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                            Váš účet nemá přiřazenou roli.<br />
+                            Kontaktujte administrátora, aby nastavil<br />
+                            <code style={{ background: 'var(--bg-elevated)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                app_metadata.role
+                            </code>
+                            {' '}pro váš účet v Supabase.
+                        </p>
+                    </div>
+                    <button className="btn btn-secondary" onClick={handleLogout}>
+                        Odhlásit se
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
