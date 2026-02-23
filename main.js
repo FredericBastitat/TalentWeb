@@ -239,8 +239,10 @@ async function handleManageCandidates() {
     } else if (newCount < currentCount) {
         // Smazat přebývající uchazeče od konce
         if (!confirm(`Opravdu chcete smazat ${currentCount - newCount} uchazečů od konce? Tato akce je nevratná.`)) return;
-        const toDelete = candidates.slice(newCount).map(c => c.id);
-        const { error } = await supabase.from('candidates').delete().in('id', toDelete);
+    // Seřaď podle kódu a smaž od konce
+    const sorted = [...candidates].sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+    const toDelete = sorted.slice(newCount).map(c => c.id);
+    const { error } = await supabase.from('candidates').delete().in('id', toDelete);
         if (error) { alert('Chyba: ' + error.message); return; }
     }
 
@@ -498,7 +500,6 @@ async function saveEvaluation(showAlert = true) {
     const candidate = candidates[currentCandidateIndex];
     candidate.evaluation = evaluation;
 
-    if (showAlert) alert('Hodnocení uloženo');
 
     if (!evaluationScreen.classList.contains('hidden')) {
         renderCandidatesTable();
