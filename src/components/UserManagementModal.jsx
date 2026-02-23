@@ -22,15 +22,20 @@ export default function UserManagementModal({ onClose, showToast }) {
         fetchUsers();
     }, []);
 
+    const invokeAdmin = async (action, userData = {}) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        return await supabase.functions.invoke('manage-users', {
+            body: { action, userData },
+            headers: {
+                Authorization: `Bearer ${session?.access_token}`
+            }
+        });
+    };
+
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase.functions.invoke('manage-users', {
-                body: { action: 'list' },
-                headers: {
-                    Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-                }
-            });
+            const { data, error } = await invokeAdmin('list');
             if (error) throw error;
             if (data.success) {
                 setUsers(data.users || []);
@@ -47,12 +52,7 @@ export default function UserManagementModal({ onClose, showToast }) {
         e.preventDefault();
         setLoading(true);
         try {
-            const { data, error } = await supabase.functions.invoke('manage-users', {
-                body: { action: 'create', userData: formData },
-                headers: {
-                    Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-                }
-            });
+            const { data, error } = await invokeAdmin('create', formData);
 
             if (error) throw error;
             if (!data.success) throw new Error(data.error);
@@ -73,12 +73,7 @@ export default function UserManagementModal({ onClose, showToast }) {
 
         setLoading(true);
         try {
-            const { data, error } = await supabase.functions.invoke('manage-users', {
-                body: { action: 'delete', userData: { userId } },
-                headers: {
-                    Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-                }
-            });
+            const { data, error } = await invokeAdmin('delete', { userId });
 
             if (error) throw error;
             if (!data.success) throw new Error(data.error);
@@ -94,59 +89,51 @@ export default function UserManagementModal({ onClose, showToast }) {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-card animate-slide-up" style={{ maxWidth: '600px' }}>
+            <div className="modal-card animate-slide-up" style={{ maxWidth: '640px' }}>
                 <div className="modal-header">
                     <h2>Správa uživatelů</h2>
-                    <button className="btn-close" onClick={onClose}>&times;</button>
+                    <button className="btn-close" onClick={onClose} aria-label="Zavřít">&times;</button>
                 </div>
 
-                <div className="modal-body" style={{ padding: '1.5rem', overflowY: 'auto' }}>
+                <div className="user-management-body">
                     {!showForm ? (
                         <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Seznam uživatelů</h3>
+                            <div className="user-list-header">
+                                <h3 className="user-list-title">Aktuální uživatelé</h3>
                                 <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-                                    ＋ Přidat uživatele
+                                    ＋ Nový uživatel
                                 </button>
                             </div>
 
                             {loading && users.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Načítání...</div>
+                                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                    <div className="animate-pulse">Načítání seznamu...</div>
+                                </div>
                             ) : (
-                                <div className="table-card" style={{ margin: 0, background: 'rgba(0,0,0,0.2)' }}>
+                                <div className="user-table-wrapper">
                                     <table className="data-table">
                                         <thead>
                                             <tr>
-                                                <th style={{ padding: '0.5rem' }}>Email</th>
-                                                <th style={{ padding: '0.5rem' }}>Role</th>
-                                                <th style={{ padding: '0.5rem', textAlign: 'right' }}>Akce</th>
+                                                <th>E-mail hodnostitele</th>
+                                                <th>Přiřazená role</th>
+                                                <th style={{ textAlign: 'right' }}>Akce</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {users.map(u => (
                                                 <tr key={u.id}>
-                                                    <td style={{ padding: '0.6rem', fontSize: '0.85rem' }}>{u.email}</td>
-                                                    <td style={{ padding: '0.6rem' }}>
-                                                        <span className="director-readonly-badge"
-                                                            style={{
-                                                                fontSize: '0.7rem',
-                                                                color: u.role === 'director' ? '#c084fc' : '#818cf8',
-                                                                borderColor: u.role === 'director' ? 'rgba(192,132,252,0.3)' : 'rgba(129,140,248,0.3)'
-                                                            }}>
+                                                    <td style={{ fontSize: '0.85rem', fontWeight: 500 }}>{u.email}</td>
+                                                    <td>
+                                                        <span className={`user-role-tag ${u.role === 'director' ? 'user-role-director' : 'user-role-evaluator'}`}>
                                                             {roles.find(r => r.id === u.role)?.name || u.role}
                                                         </span>
                                                     </td>
-                                                    <td style={{ padding: '0.6rem', textAlign: 'right' }}>
+                                                    <td style={{ textAlign: 'right' }}>
                                                         <button
-                                                            className="btn btn-secondary"
-                                                            style={{
-                                                                padding: '0.2rem 0.5rem',
-                                                                fontSize: '0.75rem',
-                                                                borderColor: 'rgba(239, 68, 68, 0.4)',
-                                                                color: '#ef4444'
-                                                            }}
+                                                            className="btn-delete-user"
                                                             onClick={() => handleDeleteUser(u.id, u.email)}
                                                             disabled={loading}
+                                                            title="Smazat uživatele"
                                                         >
                                                             Smazat
                                                         </button>
@@ -159,37 +146,39 @@ export default function UserManagementModal({ onClose, showToast }) {
                             )}
                         </>
                     ) : (
-                        <form onSubmit={handleCreateUser} className="login-form">
-                            <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Nový uživatel</h3>
+                        <form onSubmit={handleCreateUser} className="login-form animate-fade-in">
+                            <h3 className="user-list-title" style={{ marginBottom: '1.5rem' }}>Vytvořit nový přístup</h3>
 
                             <div className="input-group">
-                                <label>E-mail</label>
+                                <label>Přihlašovací e-mail</label>
                                 <input
                                     type="email"
                                     className="input-field"
                                     required
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    placeholder="jmeno@skola.cz"
                                 />
                             </div>
 
                             <div className="input-group" style={{ marginTop: '1rem' }}>
-                                <label>Heslo</label>
+                                <label>Heslo (min. 6 znaků)</label>
                                 <input
                                     type="password"
                                     className="input-field"
                                     required
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    placeholder="••••••••"
                                     minLength={6}
                                 />
                             </div>
 
                             <div className="input-group" style={{ marginTop: '1rem' }}>
-                                <label>Role</label>
+                                <label>Typ oprávnění</label>
                                 <select
                                     className="select-field"
-                                    style={{ width: '100%' }}
+                                    style={{ width: '100%', height: '46px' }}
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                 >
@@ -199,12 +188,12 @@ export default function UserManagementModal({ onClose, showToast }) {
                                 </select>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '2rem' }}>
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
                                 <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>
-                                    Zpět na seznam
+                                    Zrušit
                                 </button>
                                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
-                                    {loading ? 'Vytváření...' : 'Vytvořit'}
+                                    {loading ? 'Ukládám...' : 'Vytvořit uživatele'}
                                 </button>
                             </div>
                         </form>
