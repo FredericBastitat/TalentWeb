@@ -245,7 +245,7 @@ export default function App() {
     // ── Navigation ───────────────────────────────────────────────
     const openEvaluation = (index) => {
         setCurrentCandidateIndex(index);
-        setCurrentView('evaluation');
+        setCurrentView(isDirector ? 'director-detail' : 'evaluation');
     };
 
     const navigateCandidate = (direction) => {
@@ -536,11 +536,11 @@ export default function App() {
                         isDirector={isDirector}
                         onOpenEvaluation={openEvaluation}
                         onMoveCandidate={moveCandidate}
-                        onManageCandidates={() => setCurrentView('candidate-manager')}
+                        onManageCandidates={handleManageCandidates}
                         onExport={exportToExcel}
                         onOpenPenalties={handleOpenPenalties}
                     />
-                ) : currentView === 'director-detail' ? (
+                ) : isDirector ? (
                     <DirectorDetailView
                         candidates={candidates}
                         currentIndex={currentCandidateIndex}
