@@ -211,28 +211,44 @@ export default function DirectorDetailView({
                 </div>
 
                 {/* Bottom navigation */}
-                <div className="save-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
-                    <button
-                        className="btn btn-secondary"
-                        style={{ flex: 1, padding: '0.85rem' }}
-                        disabled={currentIndex <= 0}
-                        onClick={() => onNavigate(-1)}
-                    >
-                        ← Předchozí
+                <div className="save-row" style={{ marginTop: '2rem' }}>
+                    <button className="btn btn-secondary" style={{ width: '100%', padding: '1rem' }} onClick={onBack}>
+                        ← Zpět na přehled
                     </button>
 
-                    <button className="btn btn-secondary" style={{ flex: 2, padding: '0.85rem' }} onClick={onBack}>
-                        Zpět na přehled
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                        <button
+                            className="btn btn-secondary"
+                            style={{ padding: '0.85rem 1.5rem' }}
+                            disabled={currentIndex <= 0}
+                            onClick={() => onNavigate(-1)}
+                        >
+                            ← Předchozí
+                        </button>
 
-                    <button
-                        className="btn btn-secondary"
-                        style={{ flex: 1, padding: '0.85rem' }}
-                        disabled={currentIndex >= candidates.length - 1}
-                        onClick={() => onNavigate(1)}
-                    >
-                        Další →
-                    </button>
+                        <div style={{
+                            background: 'var(--bg-elevated)',
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--border-primary)',
+                            fontWeight: 800,
+                            minWidth: '100px',
+                            textAlign: 'center',
+                            color: 'var(--accent-primary)',
+                            fontSize: '1.1rem'
+                        }}>
+                            {candidate.code}
+                        </div>
+
+                        <button
+                            className="btn btn-secondary"
+                            style={{ padding: '0.85rem 1.5rem' }}
+                            disabled={currentIndex >= candidates.length - 1}
+                            onClick={() => onNavigate(1)}
+                        >
+                            Další →
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
