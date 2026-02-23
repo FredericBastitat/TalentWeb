@@ -537,7 +537,6 @@ export default function App() {
                         evaluatorId={evaluatorId}
                         isDirector={isDirector}
                         onOpenEvaluation={openEvaluation}
-                        onMoveCandidate={moveCandidate}
                         onManageCandidates={handleManageCandidates}
                         onExport={exportToExcel}
                         onOpenPenalties={handleOpenPenalties}

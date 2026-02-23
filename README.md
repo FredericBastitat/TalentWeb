@@ -1,188 +1,177 @@
-# TalentWeb - Aplikace pro hodnotitele talentových zkoušek
+# Supabase CLI
 
-Webová aplikace pro přepisování hodnocení talentových zkoušek z papírů do digitální podoby. Aplikace běží jako statický web na GitHub Pages s backendem na Supabase (PostgreSQL).
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## Funkce
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-- ✅ Autentifikace přes Supabase Auth (email + heslo)
-- ✅ Správa školních roků (2024/25, 2025/26, atd.)
-- ✅ Hodnocení uchazečů ve 3 kategoriích:
-  - **PORTRÉT** (5 podkritérií)
-  - **SOUBOR** (5 podkritérií)
-  - **ZÁTIŠÍ** (2 podkritéria)
-- ✅ Automatické součty bodů za každou kategorii
-- ✅ Automatické zamčení kategorie při 0 bodech za "Formální pravidla"
-- ✅ Důvody srážky (checkboxy) pro každé podkritérium
-- ✅ Navigace mezi uchazeči (zpět/vpřed)
-- ✅ Přehledová stránka s filtrováním a řazením
-- ✅ Editace již zadaných hodnocení
+This repository contains all the functionality for Supabase CLI.
 
-## Tech Stack
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-- **Frontend**: Vanilla JavaScript (ES6 modules), HTML5, CSS3
-- **Build tool**: Vite
-- **Backend**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth
-- **Hosting**: GitHub Pages
-- **Ping**: cron-job.org (pro udržení Supabase aktivní)
+## Getting started
 
-## Instalace a nastavení
+### Install the CLI
 
-### 1. Klonování repozitáře
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-git clone <your-repo-url>
-cd TalentWeb
+npm i supabase --save-dev
 ```
 
-### 2. Instalace závislostí
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-```bash
-npm install
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
 ```
 
-### 3. Nastavení Supabase
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
 
-1. Vytvořte nový projekt na [supabase.com](https://supabase.com)
-2. V projektu přejděte do **SQL Editor**
-3. Spusťte SQL migraci ze souboru `supabase/migrations/001_initial_schema.sql`
-4. V **Settings > API** zkopírujte:
-   - Project URL
-   - `anon` `public` key
+<details>
+  <summary><b>macOS</b></summary>
 
-### 4. Konfigurace aplikace
+  Available via [Homebrew](https://brew.sh). To install:
 
-Vytvořte soubor `config.js` na základě `config.example.js`:
-
-```javascript
-export const SUPABASE_CONFIG = {
-    url: 'https://your-project.supabase.co',
-    anonKey: 'your-anon-key-here'
-};
-```
-
-**Poznámka**: Pro produkci na GitHub Pages můžete také nastavit tyto hodnoty přímo v `main.js` nebo použít environment variables.
-
-### 5. Vytvoření uživatelských účtů
-
-1. V Supabase Dashboard přejděte do **Authentication > Users**
-2. Klikněte na **Invite user** a zadejte email učitele
-3. Učitel obdrží email s odkazem pro nastavení hesla
-
-### 6. Lokální vývoj
-
-```bash
-npm run dev
-```
-
-Aplikace poběží na `http://localhost:3000`
-
-### 7. Build pro produkci
-
-```bash
-npm run build
-```
-
-Vytvoří se složka `dist/` s připravenými soubory pro nasazení.
-
-## Nasazení na GitHub Pages
-
-### Automatické nasazení (GitHub Actions)
-
-1. Vytvořte soubor `.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: npm install
-      - run: npm run build
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-```
-
-2. V nastavení repozitáře na GitHubu:
-   - Settings > Pages > Source: `gh-pages` branch
-   - Nebo použijte GitHub Actions workflow výše
-
-### Ruční nasazení
-
-```bash
-npm run build
-# Commit a push složku dist/ do gh-pages branch
-```
-
-## Nastavení cron-job.org pro ping
-
-Aby se Supabase neuspala (free tier), nastavte cron job:
-
-1. Jděte na [cron-job.org](https://cron-job.org)
-2. Vytvořte nový cron job:
-   - **URL**: `https://your-project.supabase.co/rest/v1/` (nebo jakýkoli endpoint)
-   - **Interval**: Každých 14 dní (nebo podle potřeby)
-   - **Method**: GET
-
-## Struktura dat
-
-### Tabulka `candidates`
-
-- `id` (UUID) - primární klíč
-- `code` (TEXT) - kód uchazeče (např. F001)
-- `school_year` (TEXT) - školní rok (např. "2024/25")
-- `evaluation` (JSONB) - struktura hodnocení:
-  ```json
-  {
-    "portrait": {
-      "formal": 0-2,
-      "genre": 0-2,
-      "creativity": 0-2,
-      "composition": 0-2,
-      "technical": 0-2,
-      "penalties": {
-        "formal": ["wrong-count", "wrong-mounting"],
-        ...
-      }
-    },
-    "file": { ... },
-    "still-life": { ... }
-  }
+  ```sh
+  brew install supabase/tap/supabase
   ```
-- `created_at` (TIMESTAMP)
-- `updated_at` (TIMESTAMP)
-- `created_by` (UUID) - reference na auth.users
 
-## Bezpečnost
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
 
-- Row Level Security (RLS) je aktivní na tabulce `candidates`
-- Pouze přihlášení uživatelé mohou přistupovat k datům
-- Žádný veřejný přístup - nepřihlášení uživatelé nevidí nic
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
 
-## UX pravidla
+<details>
+  <summary><b>Windows</b></summary>
 
-- ✅ Vše na jedné obrazovce, scrollovatelné
-- ✅ Automatický součet bodů živě při zadávání
-- ✅ Automatické zamčení kategorie při 0 bodech za "Formální pravidla"
-- ✅ Navigace mezi uchazeči (zpět/vpřed)
-- ✅ Možnost vrátit se k libovolnému uchazeči a editovat hodnocení
-- ✅ Přehledová stránka s filtrováním a řazením
+  Available via [Scoop](https://scoop.sh). To install:
 
-## Podpora
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
 
-Pro problémy nebo dotazy vytvořte issue v repozitáři.
+  To upgrade:
 
-## Licence
+  ```powershell
+  scoop update supabase
+  ```
+</details>
 
-MIT
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
+
+```bash
+supabase bootstrap
+```
+
+Or using npx:
+
+```bash
+npx supabase bootstrap
+```
+
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+
+## Docs
+
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```

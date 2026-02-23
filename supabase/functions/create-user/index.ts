@@ -1,83 +1,54 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from '@supabase/supabase-js'
 
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders })
+Deno.serve(async (req) => {
+  // 1. Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+
+    // 2. Auth check (only director can create users)
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) throw new Error('Missing Authorization header')
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user: requester }, error: reqError } = await supabaseAdmin.auth.getUser(token)
+
+    if (reqError || !requester || requester.app_metadata?.role !== 'director') {
+      throw new Error('Pouze ředitel může vytvářet uživatele')
     }
 
-    try {
-        // Note: SERVICE_ROLE_KEY is required to bypass auth checks and create users
-        const supabaseAdmin = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-            {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false,
-                },
-            }
-        )
+    const { email, password, role } = await req.json()
 
-        // 1. Verify the requester is a Director
-        const authHeader = req.headers.get('Authorization')
-        if (!authHeader) throw new Error('Missing Authorization header')
+    // 3. Create user
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      app_metadata: { role },
+      user_metadata: { role }
+    })
 
-        const token = authHeader.replace('Bearer ', '')
-        const { data: { user: requester }, error: requesterError } = await supabaseAdmin.auth.getUser(token)
+    if (error) throw error
 
-        if (requesterError || !requester) {
-            throw new Error('Neautorizovaný přístup')
-        }
+    return new Response(JSON.stringify({ user: data.user }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
 
-        // Role check logic matching our app
-        const requesterRole = requester.app_metadata?.role || requester.user_metadata?.role
-        if (requesterRole !== 'director') {
-            throw new Error('Pouze ředitel může vytvářet uživatele')
-        }
-
-        // 2. Extract data from body
-        const { email, password, role } = await req.json()
-
-        if (!email || !password || !role) {
-            throw new Error('Chybí email, heslo nebo role')
-        }
-
-        // Validate role
-        const validRoles = ['evaluator-1', 'evaluator-2', 'evaluator-3', 'director']
-        if (!validRoles.includes(role)) {
-            throw new Error('Neplatná role')
-        }
-
-        // 3. Create the user via Admin API
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-            email,
-            password,
-            email_confirm: true, // Auto-confirm email
-            app_metadata: { role: role },
-            user_metadata: { role: role } // Set in both just in case
-        })
-
-        if (createError) throw createError
-
-        return new Response(JSON.stringify({
-            success: true,
-            message: 'Uživatel úspěšně vytvořen',
-            user: { id: newUser.user.id, email: newUser.user.email }
-        }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-        })
-
-    } catch (error) {
-        return new Response(JSON.stringify({ success: false, error: error.message }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400,
-        })
-    }
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
 })

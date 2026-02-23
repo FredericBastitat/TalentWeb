@@ -1317,32 +1317,13 @@ body::before {
     }
 
     .criterion-name {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
+        /* Slightly larger for readability */
     }
 
     .penalty-chip {
-        font-size: 0.75rem;
-        padding: 0.35rem 0.65rem;
-        min-height: 34px;
-    }
-
-    .data-table td,
-    .data-table th {
-        padding: 0.65rem 0.85rem;
-    }
-
-    .director-summary-row {
-        gap: 0.6rem;
-        margin-bottom: 1rem;
-    }
-
-    .nav-btn-fixed {
-        min-width: 100px;
-        padding: 0.65rem 1.25rem !important;
-    }
-
-    .eval-candidate-code {
-        font-size: 1.6rem;
+        font-size: 0.8rem;
+        padding: 0.5rem 0.85rem;
     }
 }
 

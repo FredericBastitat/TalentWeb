@@ -8,7 +8,6 @@ export default function OverviewScreen({
     evaluatorId,
     isDirector,
     onOpenEvaluation,
-    onMoveCandidate,
     onManageCandidates,
     onExport,
     onOpenPenalties,
