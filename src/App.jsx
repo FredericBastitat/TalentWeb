@@ -71,7 +71,6 @@ export default function App() {
     const calculateCategorySum = (candidate, category) => {
         if (!candidate.evaluation || !candidate.evaluation[category]) return 0;
         const categoryData = candidate.evaluation[category];
-        if (categoryData.formal === 0) return 0;
         let sum = 0;
         Object.keys(categoryData).forEach(key => {
             if (key !== 'penalties' && typeof categoryData[key] === 'number') {

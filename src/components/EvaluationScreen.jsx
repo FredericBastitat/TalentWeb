@@ -21,7 +21,6 @@ const CATEGORIES = [
                 key: 'genre',
                 name: 'Žánr',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'wrong-genre', label: 'Nedodržení žánru (portrét, zátiší)' },
                     { value: 'wrong-requirements', label: 'Nedodržení požadavků interiér/exteriér, vytvořené/nalezené, barva/ČB' },
@@ -31,7 +30,6 @@ const CATEGORIES = [
                 key: 'creativity',
                 name: 'Volba námětu / kreativita',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'uninteresting', label: 'Nezajímavý námět, fotografie bez nápadu' },
                     { value: 'low-creativity', label: 'Malá míra kreativity' },
@@ -42,7 +40,6 @@ const CATEGORIES = [
                 key: 'composition',
                 name: 'Kompozice',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'wrong-rules', label: 'Bezdůvodné nedodržení kompozičních pravidel' },
                     { value: 'wrong-dof', label: 'Nevhodné použití hloubky ostrosti' },
@@ -55,7 +52,6 @@ const CATEGORIES = [
                 key: 'technical',
                 name: 'Práce se světlem, technická kvalita',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'unsharp', label: 'Neostrá fotografie' },
                     { value: 'exposure', label: 'Nevhodná expozice' },
@@ -84,7 +80,6 @@ const CATEGORIES = [
                 key: 'relevance',
                 name: 'Jasná souvislost s tématem souboru',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'wrong-genre', label: 'Nedodržení žánru' },
                     { value: 'wrong-requirements', label: 'Nedodržení požadavků interiér/exteriér, barva/ČB' },
@@ -94,7 +89,6 @@ const CATEGORIES = [
                 key: 'creativity',
                 name: 'Volba námětu / kreativita',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'uninteresting', label: 'Nezajímavý námět' },
                     { value: 'low-creativity', label: 'Malá míra kreativity' },
@@ -105,7 +99,6 @@ const CATEGORIES = [
                 key: 'composition',
                 name: 'Kompozice',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'wrong-rules', label: 'Bezdůvodné nedodržení kompozičních pravidel' },
                     { value: 'wrong-dof', label: 'Nevhodné použití hloubky ostrosti' },
@@ -118,7 +111,6 @@ const CATEGORIES = [
                 key: 'technical',
                 name: 'Práce se světlem, technická kvalita',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'unsharp', label: 'Neostrá fotografie' },
                     { value: 'exposure', label: 'Nevhodná expozice' },
@@ -147,7 +139,6 @@ const CATEGORIES = [
                 key: 'genre',
                 name: 'Žánr a požadavky',
                 maxScore: 2,
-                dependsOnFormal: true,
                 penalties: [
                     { value: 'wrong-genre', label: 'Nedodržení žánru' },
                     { value: 'wrong-requirements', label: 'Nedodržení požadavků interiér/exteriér, barva/ČB' },
@@ -236,7 +227,7 @@ export default function EvaluationScreen({
     // Calculate sum for a category from current form state
     const getCategorySum = (categoryKey) => {
         const catData = evaluation[categoryKey];
-        if (!catData || catData.formal === 0) return 0;
+        if (!catData) return 0;
         let sum = 0;
         Object.keys(catData).forEach(key => {
             if (key !== 'penalties' && typeof catData[key] === 'number') {
@@ -288,8 +279,7 @@ export default function EvaluationScreen({
                 </div>
 
                 {CATEGORIES.map(category => {
-                    const catData = evaluation[category.key] || { formal: 0 };
-                    const formalValue = catData.formal || 0;
+                    const catData = evaluation[category.key] || {};
                     const sum = getCategorySum(category.key);
 
                     return (
@@ -300,7 +290,6 @@ export default function EvaluationScreen({
                             </div>
                             <div className="category-body">
                                 {category.criteria.map(criterion => {
-                                    const isDisabled = criterion.dependsOnFormal && formalValue === 0;
                                     const scoreValue = catData[criterion.key] || 0;
                                     const checkedPenalties = catData.penalties?.[criterion.key] || [];
 
@@ -310,7 +299,7 @@ export default function EvaluationScreen({
                                             criterion={criterion}
                                             categoryKey={category.key}
                                             score={scoreValue}
-                                            disabled={isDisabled}
+                                            disabled={false}
                                             checkedPenalties={checkedPenalties}
                                             onScoreChange={handleScoreChange}
                                             onPenaltyChange={handlePenaltyChange}
