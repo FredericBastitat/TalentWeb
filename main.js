@@ -537,21 +537,97 @@ function exportToExcel() {
         return;
     }
 
-    const data = candidates.map(c => ({
-        'Kód': c.code || '',
-        'Portrét': calculateCategorySum(c, 'portrait'),
-        'Soubor': calculateCategorySum(c, 'file'),
-        'Zátiší': calculateCategorySum(c, 'still-life'),
-        'Celkem': calculateCategorySum(c, 'portrait') + calculateCategorySum(c, 'file') + calculateCategorySum(c, 'still-life')
-    }));
+    const penaltyLabels = {
+        'wrong-count': 'Jiný počet fotografií',
+        'wrong-mounting': 'Nenalepené na podkladovém papíru',
+        'wrong-format': 'Jiný formát nebo orientace',
+        'wrong-genre': 'Nedodržení žánru',
+        'wrong-requirements': 'Nedodržení požadavků',
+        'uninteresting': 'Nezajímavý námět',
+        'low-creativity': 'Malá míra kreativity',
+        'inconsistent': 'Nekonzistentní soubor',
+        'wrong-rules': 'Nedodržení kompozičních pravidel',
+        'wrong-dof': 'Nevhodné použití hloubky ostrosti',
+        'wrong-crop': 'Chybné ořezy',
+        'mergers': 'Srostlice',
+        'distracting': 'Rušivé prvky',
+        'unsharp': 'Neostrá fotografie',
+        'exposure': 'Nevhodná expozice',
+        'white-balance': 'Špatné vyvážení bílé',
+        'resolution': 'Malé rozlišení nebo šum',
+        'editing': 'Nevhodná editace',
+        'relevance': 'Jasná souvislost s tématem'
+    };
+
+    const criterionLabels = {
+        'formal': 'Formální pravidla',
+        'genre': 'Žánr',
+        'creativity': 'Kreativita',
+        'composition': 'Kompozice',
+        'technical': 'Technická kvalita',
+        'relevance': 'Souvislost s tématem'
+    };
+
+    const getPenalties = (evaluation, category) => {
+        const penalties = evaluation?.[category]?.penalties || {};
+        return Object.entries(penalties).map(([criterion, values]) => {
+            const criterionName = criterionLabels[criterion] || criterion;
+            const penaltyNames = values.map(v => penaltyLabels[v] || v).join(', ');
+            return `${criterionName}: ${penaltyNames}`;
+        }).join('\n');
+    };
+
+    const data = candidates.map(c => {
+        const ev = c.evaluation || {};
+        return {
+            'Kód': c.code || '',
+            'Portrét': calculateCategorySum(c, 'portrait'),
+            'Poznámky - Portrét': getPenalties(ev, 'portrait'),
+            'Soubor': calculateCategorySum(c, 'file'),
+            'Poznámky - Soubor': getPenalties(ev, 'file'),
+            'Zátiší': calculateCategorySum(c, 'still-life'),
+            'Poznámky - Zátiší': getPenalties(ev, 'still-life'),
+            'Celkem': calculateCategorySum(c, 'portrait') + calculateCategorySum(c, 'file') + calculateCategorySum(c, 'still-life')
+        };
+    });
 
     const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Uchazeči');
 
     // Šířky sloupců
-    ws['!cols'] = [{ wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+    ws['!cols'] = [
+        { wch: 8 },   // Kód
+        { wch: 10 },  // Portrét
+        { wch: 40 },  // Poznámky Portrét
+        { wch: 10 },  // Soubor
+        { wch: 40 },  // Poznámky Soubor
+        { wch: 10 },  // Zátiší
+        { wch: 40 },  // Poznámky Zátiší
+        { wch: 10 },  // Celkem
+    ];
 
+    // Styl hlavičky
+    const headerStyle = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '2563EB' } },
+        alignment: { horizontal: 'center' }
+    };
+
+    const headers = ['A1','B1','C1','D1','E1','F1','G1','H1'];
+    headers.forEach(cell => {
+        if (ws[cell]) ws[cell].s = headerStyle;
+    });
+
+    // Zalamování textu v poznámkách
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = 1; R <= range.e.r; R++) {
+        ['C','E','G'].forEach(col => {
+            const cell = ws[`${col}${R+1}`];
+            if (cell) cell.s = { alignment: { wrapText: true, vertical: 'top' } };
+        });
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Uchazeči');
     XLSX.writeFile(wb, `TalentWeb_${currentYear.replace('/', '-')}.xlsx`);
 }
 
