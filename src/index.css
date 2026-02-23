@@ -3,7 +3,9 @@
    ================================================================ */
 
 /* === Reset & Base === */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -101,38 +103,85 @@ body::before {
 
 /* === Animations === */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
 }
 
 @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 8px var(--role-color, var(--accent-primary)); }
-    50% { box-shadow: 0 0 20px var(--role-color, var(--accent-primary)); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px var(--role-color, var(--accent-primary));
+    }
+
+    50% {
+        box-shadow: 0 0 20px var(--role-color, var(--accent-primary));
+    }
 }
 
 .animate-fade-in {
@@ -804,9 +853,11 @@ body::before {
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
-    padding: 2rem;
+    padding: 1.5rem;
     box-shadow: var(--glass-shadow);
     animation: slideUp 0.4s ease forwards;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .eval-candidate-info {
@@ -830,7 +881,7 @@ body::before {
 
 /* Category sections */
 .category-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     border-radius: var(--radius-md);
     overflow: hidden;
     border: 1px solid var(--border-primary);
@@ -841,7 +892,7 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.25rem;
     background: var(--bg-elevated);
     cursor: default;
 }
@@ -864,17 +915,29 @@ body::before {
 }
 
 .category-body {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+    .category-body {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
 }
 
 /* Criterion */
 .criterion-card {
     padding: 1rem;
-    margin-bottom: 0.75rem;
     background: var(--glass-bg);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .criterion-card:last-child {
@@ -930,9 +993,15 @@ body::before {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-primary);
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+}
+
+@media (min-width: 1400px) {
+    .penalty-section {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 .penalty-label {
@@ -1270,6 +1339,7 @@ body::before {
 }
 
 @media (max-width: 480px) {
+
     .data-table th,
     .data-table td {
         padding: 0.6rem 0.8rem;
