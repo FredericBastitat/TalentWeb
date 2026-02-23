@@ -1,27 +1,41 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import {
+    CATEGORIES,
+    EVALUATOR_META,
+    DEFAULT_EVALUATION,
+    PENALTY_CODES,
+    calculateCategorySum,
+    calculateTotalSum,
+} from './constants';
 import LoginScreen from './components/LoginScreen';
+import RoleSelector from './components/RoleSelector';
 import AppHeader from './components/AppHeader';
 import OverviewScreen from './components/OverviewScreen';
 import EvaluationScreen from './components/EvaluationScreen';
+import DirectorDetailView from './components/DirectorDetailView';
 import Toast from './components/Toast';
 
 export default function App() {
     const [user, setUser] = useState(null);
+    const [role, setRole] = useState(() => localStorage.getItem('talentweb_role'));
     const [loading, setLoading] = useState(true);
     const [currentYear, setCurrentYear] = useState('');
     const [candidates, setCandidates] = useState([]);
-    const [currentView, setCurrentView] = useState('overview'); // 'overview' | 'evaluation'
+    const [evaluationsMap, setEvaluationsMap] = useState({});
+    const [currentView, setCurrentView] = useState('overview');
     const [currentCandidateIndex, setCurrentCandidateIndex] = useState(-1);
     const [toast, setToast] = useState(null);
 
-    // Toast helper
+    const isDirector = role === 'director';
+    const evaluatorId = !isDirector && role ? parseInt(role.split('-')[1]) : null;
+
     const showToast = useCallback((message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
     }, []);
 
-    // Auth state
+    // ── Auth state ───────────────────────────────────────────────
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
@@ -35,67 +49,104 @@ export default function App() {
         return () => subscription.unsubscribe();
     }, []);
 
-    // Load candidates when year changes
-    useEffect(() => {
-        if (currentYear && user) {
-            loadCandidates();
-        } else {
-            setCandidates([]);
-        }
-    }, [currentYear, user]);
-
     // Auto-select current year on login
     useEffect(() => {
-        if (user) {
+        if (user && role) {
             const now = new Date().getFullYear();
             setCurrentYear(`${now}/${now + 1}`);
         }
-    }, [user]);
+    }, [user, role]);
 
-    const loadCandidates = async () => {
-        const { data, error } = await supabase
+    // Load data when year or role changes
+    useEffect(() => {
+        if (currentYear && user && role) {
+            loadData();
+        } else {
+            setCandidates([]);
+            setEvaluationsMap({});
+        }
+    }, [currentYear, user, role]);
+
+    // ── Data loading ─────────────────────────────────────────────
+    const loadData = async () => {
+        // 1. Load candidates
+        const { data: candidatesData, error: candError } = await supabase
             .from('candidates')
-            .select('*')
+            .select('id, code, school_year, created_at')
             .eq('school_year', currentYear)
             .order('code', { ascending: true });
 
-        if (error) {
-            console.error('Error loading candidates:', error);
+        if (candError) {
+            console.error('Error loading candidates:', candError);
             setCandidates([]);
-        } else {
-            setCandidates(data || []);
+            setEvaluationsMap({});
+            return;
         }
-    };
 
-    // Calculate category sum – same logic as original
-    const calculateCategorySum = (candidate, category) => {
-        if (!candidate.evaluation || !candidate.evaluation[category]) return 0;
-        const categoryData = candidate.evaluation[category];
-        let sum = 0;
-        Object.keys(categoryData).forEach(key => {
-            if (key !== 'penalties' && typeof categoryData[key] === 'number') {
-                sum += categoryData[key];
-            }
+        setCandidates(candidatesData || []);
+
+        // 2. Load evaluations
+        const candidateIds = (candidatesData || []).map(c => c.id);
+        if (candidateIds.length === 0) {
+            setEvaluationsMap({});
+            return;
+        }
+
+        let query = supabase
+            .from('evaluations')
+            .select('*')
+            .in('candidate_id', candidateIds);
+
+        // For evaluators, load only their own
+        if (!isDirector && evaluatorId) {
+            query = query.eq('evaluator_id', evaluatorId);
+        }
+
+        const { data: evalsData, error: evalError } = await query;
+        if (evalError) {
+            console.error('Error loading evaluations:', evalError);
+            setEvaluationsMap({});
+            return;
+        }
+
+        const map = {};
+        (evalsData || []).forEach(e => {
+            if (!map[e.candidate_id]) map[e.candidate_id] = {};
+            map[e.candidate_id][e.evaluator_id] = e.evaluation;
         });
-        return sum;
+
+        setEvaluationsMap(map);
     };
 
-    const handleLogin = async (email, password) => {
+    // ── Auth handlers ────────────────────────────────────────────
+    const handleLogin = async (email, password, selectedRole) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return error.message;
         setUser(data.user);
+        setRole(selectedRole);
+        localStorage.setItem('talentweb_role', selectedRole);
         return null;
+    };
+
+    const handleRoleSelect = (selectedRole) => {
+        setRole(selectedRole);
+        localStorage.setItem('talentweb_role', selectedRole);
     };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         setUser(null);
+        setRole(null);
+        localStorage.removeItem('talentweb_role');
         setCurrentYear('');
         setCandidates([]);
+        setEvaluationsMap({});
         setCurrentView('overview');
     };
 
+    // ── Candidate management (evaluators only) ──────────────────
     const handleManageCandidates = async () => {
+        if (isDirector) return;
         if (!currentYear) {
             alert('Nejprve vyberte školní rok');
             return;
@@ -118,11 +169,6 @@ export default function App() {
             const newCandidates = Array.from({ length: newCount - currentCount }, (_, i) => ({
                 code: `F${String(currentCount + i + 1).padStart(3, '0')}`,
                 school_year: currentYear,
-                evaluation: {
-                    portrait: { formal: 0 },
-                    file: { formal: 0 },
-                    'still-life': { formal: 0 }
-                }
             }));
 
             const { error } = await supabase.from('candidates').insert(newCandidates);
@@ -137,10 +183,11 @@ export default function App() {
             showToast(`Smazáno ${currentCount - newCount} uchazečů`);
         }
 
-        await loadCandidates();
+        await loadData();
     };
 
     const moveCandidate = async (index, direction) => {
+        if (isDirector) return;
         const targetIndex = index + direction;
         if (targetIndex < 0 || targetIndex >= candidates.length) return;
 
@@ -157,31 +204,42 @@ export default function App() {
         const { error: e2 } = await supabase.from('candidates').update({ code: b.code }).eq('id', a.id);
         if (e2) { alert('Chyba při přesunu'); return; }
 
-        await loadCandidates();
+        await loadData();
     };
 
+    // ── Save evaluation (evaluators only) ────────────────────────
     const saveEvaluation = async (evaluation, candidateId, showAlert = true) => {
+        if (isDirector || !evaluatorId) return false;
+
         const { error } = await supabase
-            .from('candidates')
-            .update({ evaluation })
-            .eq('id', candidateId);
+            .from('evaluations')
+            .upsert(
+                {
+                    candidate_id: candidateId,
+                    evaluator_id: evaluatorId,
+                    evaluation,
+                },
+                { onConflict: 'candidate_id,evaluator_id' }
+            );
 
         if (error) {
             showToast('Chyba při ukládání: ' + error.message, 'error');
             return false;
         }
 
-        // Update local state
-        setCandidates(prev => prev.map(c =>
-            c.id === candidateId ? { ...c, evaluation } : c
-        ));
+        setEvaluationsMap(prev => ({
+            ...prev,
+            [candidateId]: {
+                ...(prev[candidateId] || {}),
+                [evaluatorId]: evaluation,
+            },
+        }));
 
-        if (showAlert) {
-            showToast('Hodnocení uloženo ✓');
-        }
+        if (showAlert) showToast('Hodnocení uloženo ✓');
         return true;
     };
 
+    // ── Navigation ───────────────────────────────────────────────
     const openEvaluation = (index) => {
         setCurrentCandidateIndex(index);
         setCurrentView('evaluation');
@@ -194,53 +252,27 @@ export default function App() {
         }
     };
 
-    // Excel export – improved formatting with separate score/penalty columns
+    // ── Excel export ─────────────────────────────────────────────
     const exportToExcel = () => {
         if (!currentYear || candidates.length === 0) {
             alert('Nejsou žádní uchazeči k exportu');
             return;
         }
 
-        const penaltyCodes = {
-            'wrong-count': 'A', 'wrong-mounting': 'B', 'wrong-format': 'C',
-            'wrong-genre': 'D', 'wrong-requirements': 'E',
-            'uninteresting': 'F', 'low-creativity': 'G', 'inconsistent': 'H',
-            'wrong-rules': 'A', 'wrong-dof': 'B', 'wrong-crop': 'C',
-            'mergers': 'D', 'distracting': 'E',
-            'unsharp': 'A', 'exposure': 'B', 'white-balance': 'C',
-            'resolution': 'D', 'editing': 'E', 'relevance': 'A'
-        };
+        const wb = XLSX.utils.book_new();
 
-        const categories = [
-            {
-                name: 'PORTRÉT', key: 'portrait', color: '4472C4',
-                criteria: [
-                    { key: 'formal', label: 'Formální' },
-                    { key: 'genre', label: 'Žánr' },
-                    { key: 'creativity', label: 'Kreativita' },
-                    { key: 'composition', label: 'Kompozice' },
-                    { key: 'technical', label: 'Technika' },
-                ]
-            },
-            {
-                name: 'SOUBOR', key: 'file', color: '548235',
-                criteria: [
-                    { key: 'formal', label: 'Formální' },
-                    { key: 'relevance', label: 'Souvislost' },
-                    { key: 'creativity', label: 'Kreativita' },
-                    { key: 'composition', label: 'Kompozice' },
-                    { key: 'technical', label: 'Technika' },
-                ]
-            },
-            {
-                name: 'ZÁTIŠÍ', key: 'still-life', color: 'BF8F00',
-                criteria: [
-                    { key: 'formal', label: 'Formální' },
-                    { key: 'genre', label: 'Žánr' },
-                ]
-            }
-        ];
+        if (isDirector) {
+            // Director export: summary + detail sheets per evaluator
+            exportDirectorSummary(wb);
+            [1, 2, 3].forEach(eid => {
+                exportEvaluatorSheet(wb, eid, EVALUATOR_META[eid].name);
+            });
+        } else {
+            // Evaluator export: their own detailed sheet
+            exportEvaluatorSheet(wb, evaluatorId, EVALUATOR_META[evaluatorId].name);
+        }
 
+        // Legend sheet
         const legendData = [
             ['ZKRATKY DŮVODŮ PENALIZACE'],
             [''],
@@ -272,49 +304,89 @@ export default function App() {
             ['  D = Malé rozlišení nebo šum'],
             ['  E = Nevhodná editace'],
         ];
+        const wsLegend = XLSX.utils.aoa_to_sheet(legendData);
+        wsLegend['!cols'] = [{ wch: 55 }];
+        XLSX.utils.book_append_sheet(wb, wsLegend, 'Legenda zkratek');
 
-        // --- Border helper ---
+        const suffix = isDirector ? 'všichni' : EVALUATOR_META[evaluatorId].shortName;
+        XLSX.writeFile(wb, `TalentWeb_${currentYear.replace('/', '-')}_${suffix}.xlsx`);
+        showToast('Excel exportován ✓');
+    };
+
+    const exportDirectorSummary = (wb) => {
+        const headers = ['Kód', 'H1', 'H2', 'H3', 'Celkem'];
+        const rows = candidates.map(c => {
+            const evals = evaluationsMap[c.id] || {};
+            const h1 = calculateTotalSum(evals[1]);
+            const h2 = calculateTotalSum(evals[2]);
+            const h3 = calculateTotalSum(evals[3]);
+            return [c.code, h1, h2, h3, h1 + h2 + h3];
+        });
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        ws['!cols'] = [{ wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Souhrn');
+    };
+
+    const exportEvaluatorSheet = (wb, eid, sheetName) => {
         const thinBorder = { style: 'thin', color: { rgb: 'B0B0B0' } };
         const borders = {
             top: thinBorder, bottom: thinBorder,
             left: thinBorder, right: thinBorder,
         };
 
-        // --- Build column layout ---
-        // Each criterion → 2 columns: "body" (score) + "chyby" (penalty letters)
-        // Format: KÓD | [cat: body chyby body chyby ... | SUMA] | ... | CELKEM
-        let colIdx = 0; // 0-indexed
+        const excelCategories = [
+            {
+                name: 'PORTRÉT', key: 'portrait', color: '4472C4',
+                criteria: [
+                    { key: 'formal', label: 'Formální' },
+                    { key: 'genre', label: 'Žánr' },
+                    { key: 'creativity', label: 'Kreativita' },
+                    { key: 'composition', label: 'Kompozice' },
+                    { key: 'technical', label: 'Technika' },
+                ],
+            },
+            {
+                name: 'SOUBOR', key: 'file', color: '548235',
+                criteria: [
+                    { key: 'formal', label: 'Formální' },
+                    { key: 'relevance', label: 'Souvislost' },
+                    { key: 'creativity', label: 'Kreativita' },
+                    { key: 'composition', label: 'Kompozice' },
+                    { key: 'technical', label: 'Technika' },
+                ],
+            },
+            {
+                name: 'ZÁTIŠÍ', key: 'still-life', color: 'BF8F00',
+                criteria: [
+                    { key: 'formal', label: 'Formální' },
+                    { key: 'genre', label: 'Žánr' },
+                ],
+            },
+        ];
+
+        let colIdx = 0;
         const colMap = [];
         const merges = [];
-
         const codeCol = colIdx++;
 
-        categories.forEach(cat => {
+        excelCategories.forEach(cat => {
             const catStartCol = colIdx;
-
             cat.criteria.forEach(cr => {
                 colMap.push({ type: 'score', category: cat.key, criterion: cr.key, label: cr.label, col: colIdx, catColor: cat.color });
                 colIdx++;
                 colMap.push({ type: 'penalty', category: cat.key, criterion: cr.key, col: colIdx, catColor: cat.color });
                 colIdx++;
             });
-
             colMap.push({ type: 'suma', category: cat.key, col: colIdx, catColor: cat.color });
             colIdx++;
-
             const catEndCol = colIdx - 1;
-
-            // Merge for category header (row 0)
             merges.push({ s: { r: 0, c: catStartCol }, e: { r: 0, c: catEndCol } });
         });
 
-        // CELKEM column
         const totalCol = colIdx;
         colIdx++;
-
         const totalColsCount = colIdx;
 
-        // --- Helper to write cell ---
         const ws = {};
         const setCell = (r, c, v, s) => {
             const addr = XLSX.utils.encode_cell({ r, c });
@@ -322,8 +394,7 @@ export default function App() {
             if (s) ws[addr].s = s;
         };
 
-        // === ROW 0: Category headers ===
-        // KÓD spans rows 0+1
+        // Row 0: category headers
         merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
         setCell(0, 0, 'Kód', {
             font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
@@ -332,7 +403,6 @@ export default function App() {
             border: borders,
         });
 
-        // CELKEM spans rows 0+1
         merges.push({ s: { r: 0, c: totalCol }, e: { r: 1, c: totalCol } });
         setCell(0, totalCol, 'CELKEM', {
             font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
@@ -341,8 +411,7 @@ export default function App() {
             border: borders,
         });
 
-        categories.forEach(cat => {
-            // Find first col of this category
+        excelCategories.forEach(cat => {
             const firstEntry = colMap.find(e => e.category === cat.key);
             if (!firstEntry) return;
             setCell(0, firstEntry.col, cat.name, {
@@ -353,7 +422,7 @@ export default function App() {
             });
         });
 
-        // === ROW 1: Sub-headers (criterion labels) ===
+        // Row 1: sub-headers
         colMap.forEach(entry => {
             const lightColor = entry.catColor.replace(/(.{2})(.{2})(.{2})/, (_, r, g, b) => {
                 const lighten = (hex) => Math.min(255, parseInt(hex, 16) + 80).toString(16).padStart(2, '0');
@@ -384,13 +453,13 @@ export default function App() {
             }
         });
 
-        // === DATA ROWS (starting at row 2) ===
+        // Data rows
         candidates.forEach((candidate, i) => {
             const row = i + 2;
             const isEven = i % 2 === 0;
             const rowBg = isEven ? 'F5F5F5' : 'FFFFFF';
+            const ev = evaluationsMap[candidate.id]?.[eid] || null;
 
-            // Kód
             setCell(row, codeCol, candidate.code || '', {
                 font: { bold: true, sz: 10 },
                 fill: { fgColor: { rgb: rowBg } },
@@ -400,8 +469,7 @@ export default function App() {
 
             colMap.forEach(entry => {
                 if (entry.type === 'score') {
-                    const ev = candidate.evaluation?.[entry.category];
-                    const score = ev?.[entry.criterion];
+                    const score = ev?.[entry.category]?.[entry.criterion];
                     setCell(row, entry.col, score !== undefined ? score : '', {
                         font: { sz: 10 },
                         fill: { fgColor: { rgb: rowBg } },
@@ -409,9 +477,8 @@ export default function App() {
                         border: borders,
                     });
                 } else if (entry.type === 'penalty') {
-                    const ev = candidate.evaluation?.[entry.category];
-                    const penalties = ev?.penalties?.[entry.criterion] || [];
-                    const codes = penalties.map(p => penaltyCodes[p] || '?').join(', ');
+                    const penalties = ev?.[entry.category]?.penalties?.[entry.criterion] || [];
+                    const codes = penalties.map(p => PENALTY_CODES[p] || '?').join(', ');
                     setCell(row, entry.col, codes, {
                         font: { sz: 9, color: { rgb: codes ? 'CC0000' : '999999' } },
                         fill: { fgColor: { rgb: rowBg } },
@@ -419,7 +486,7 @@ export default function App() {
                         border: borders,
                     });
                 } else if (entry.type === 'suma') {
-                    const sum = calculateCategorySum(candidate, entry.category);
+                    const sum = calculateCategorySum(ev, entry.category);
                     const lightCatBg = entry.catColor.replace(/(.{2})(.{2})(.{2})/, (_, r, g, b) => {
                         const lighten = (hex) => Math.min(255, parseInt(hex, 16) + 140).toString(16).padStart(2, '0');
                         return lighten(r) + lighten(g) + lighten(b);
@@ -433,12 +500,7 @@ export default function App() {
                 }
             });
 
-            // CELKEM
-            const portraitSum = calculateCategorySum(candidate, 'portrait');
-            const fileSum = calculateCategorySum(candidate, 'file');
-            const slSum = calculateCategorySum(candidate, 'still-life');
-            const grandTotal = portraitSum + fileSum + slSum;
-
+            const grandTotal = calculateTotalSum(ev);
             setCell(row, totalCol, grandTotal, {
                 font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
                 fill: { fgColor: { rgb: '7030A0' } },
@@ -447,20 +509,18 @@ export default function App() {
             });
         });
 
-        // === Column widths ===
-        const colWidths = [{ wch: 7 }]; // Kód
+        // Column widths & row heights
+        const colWidths = [{ wch: 7 }];
         colMap.forEach(entry => {
             if (entry.type === 'score') colWidths.push({ wch: 10 });
             else if (entry.type === 'penalty') colWidths.push({ wch: 8 });
             else if (entry.type === 'suma') colWidths.push({ wch: 7 });
         });
-        colWidths.push({ wch: 9 }); // CELKEM
+        colWidths.push({ wch: 9 });
 
-        // === Row heights ===
-        const rowHeights = [{ hpt: 28 }, { hpt: 24 }]; // header rows
+        const rowHeights = [{ hpt: 28 }, { hpt: 24 }];
         candidates.forEach(() => rowHeights.push({ hpt: 20 }));
 
-        // === Finalize worksheet ===
         ws['!merges'] = merges;
         ws['!cols'] = colWidths;
         ws['!rows'] = rowHeights;
@@ -469,18 +529,10 @@ export default function App() {
             { r: candidates.length + 1, c: totalColsCount - 1 }
         );
 
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Hodnocení');
-
-        // === Legenda sheet ===
-        const wsLegend = XLSX.utils.aoa_to_sheet(legendData);
-        wsLegend['!cols'] = [{ wch: 55 }];
-        XLSX.utils.book_append_sheet(wb, wsLegend, 'Legenda zkratek');
-
-        XLSX.writeFile(wb, `TalentWeb_${currentYear.replace('/', '-')}.xlsx`);
-        showToast('Excel exportován ✓');
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
     };
 
+    // ── Render ───────────────────────────────────────────────────
     if (loading) {
         return (
             <div className="login-screen">
@@ -495,31 +547,48 @@ export default function App() {
         return <LoginScreen onLogin={handleLogin} />;
     }
 
+    if (!role) {
+        return <RoleSelector onSelect={handleRoleSelect} onLogout={handleLogout} />;
+    }
+
     return (
         <>
             <AppHeader
                 currentYear={currentYear}
                 onYearChange={setCurrentYear}
                 onLogout={handleLogout}
+                role={role}
             />
             <div className="content-wrapper">
                 {currentView === 'overview' ? (
                     <OverviewScreen
                         candidates={candidates}
-                        calculateCategorySum={calculateCategorySum}
+                        evaluationsMap={evaluationsMap}
+                        role={role}
+                        evaluatorId={evaluatorId}
+                        isDirector={isDirector}
                         onOpenEvaluation={openEvaluation}
                         onMoveCandidate={moveCandidate}
                         onManageCandidates={handleManageCandidates}
                         onExport={exportToExcel}
                     />
+                ) : isDirector ? (
+                    <DirectorDetailView
+                        candidates={candidates}
+                        currentIndex={currentCandidateIndex}
+                        evaluationsMap={evaluationsMap}
+                        onBack={() => setCurrentView('overview')}
+                        onNavigate={navigateCandidate}
+                    />
                 ) : (
                     <EvaluationScreen
                         candidates={candidates}
                         currentIndex={currentCandidateIndex}
-                        onBack={() => { setCurrentView('overview'); }}
+                        evaluationsMap={evaluationsMap}
+                        evaluatorId={evaluatorId}
+                        onBack={() => setCurrentView('overview')}
                         onNavigate={navigateCandidate}
                         onSave={saveEvaluation}
-                        calculateCategorySum={calculateCategorySum}
                     />
                 )}
             </div>
