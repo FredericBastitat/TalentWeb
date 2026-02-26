@@ -321,7 +321,7 @@ export default function App() {
                 ],
             },
             {
-                name: 'SOUBOR', key: 'file', color: 'F59E0B',
+                name: 'SOUBOR', key: 'file', color: '38BDF8',
                 criteria: [
                     { key: 'formal', label: 'Formální' },
                     { key: 'relevance', label: 'Souvislost' },

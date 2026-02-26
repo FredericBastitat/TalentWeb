@@ -67,8 +67,8 @@ export const CATEGORIES = [
     {
         key: 'file',
         title: 'SOUBOR',
-        color: '#f59e0b', // Amber/Golden Yellow
-        colorBg: 'rgba(245, 158, 11, 0.1)',
+        color: '#38bdf8', // Blue/Azure (More distinct from Yellow)
+        colorBg: 'rgba(56, 189, 248, 0.1)',
         criteria: [
             {
                 key: 'formal',
