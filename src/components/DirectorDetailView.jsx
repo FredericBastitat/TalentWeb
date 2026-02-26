@@ -84,7 +84,7 @@ export default function DirectorDetailView({
                                 padding: '0.75rem'
                             }}>
                                 <span className="director-criterion-name" style={{ fontWeight: 800, fontSize: '1.1rem', color: category.color }}>
-                                    PRŮMĚR / SUMA
+                                    SUMA
                                 </span>
                                 {evaluatorIds.map(eid => {
                                     const ev = evals[eid];
