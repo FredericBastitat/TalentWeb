@@ -76,18 +76,38 @@ export default function DirectorDetailView({
                             <span className="category-title">{category.title}</span>
                         </div>
                         <div className="category-body">
-                            {/* Column headers */}
-                            <div className="director-criterion-header">
-                                <span className="director-criterion-name-header">Kritérium</span>
-                                {evaluatorIds.map(eid => (
-                                    <span
-                                        key={eid}
-                                        className="director-criterion-score-header"
-                                        style={{ color: EVALUATOR_META[eid].color }}
-                                    >
-                                        {EVALUATOR_META[eid].shortName}
-                                    </span>
-                                ))}
+                            {/* Category SUM (moved to top and highlighted) */}
+                            <div className="director-criterion-row director-criterion-sum-row" style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                marginBottom: '0.5rem',
+                                padding: '0.75rem'
+                            }}>
+                                <span className="director-criterion-name" style={{ fontWeight: 800, fontSize: '1.1rem' }}>
+                                    PRŮMĚR / SUMA
+                                </span>
+                                {evaluatorIds.map(eid => {
+                                    const ev = evals[eid];
+                                    const sum = calculateCategorySum(ev, category.key);
+                                    const hasData = ev != null;
+                                    return (
+                                        <div
+                                            key={eid}
+                                            className="director-criterion-score"
+                                            style={{
+                                                color: hasData
+                                                    ? EVALUATOR_META[eid].color
+                                                    : 'var(--text-muted)',
+                                                fontWeight: 800,
+                                                fontSize: '1.1rem'
+                                            }}
+                                        >
+                                            <span className="director-score-value">
+                                                {hasData ? sum : '–'}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             {category.criteria.map(criterion => {
@@ -100,7 +120,6 @@ export default function DirectorDetailView({
                                             const ev = evals[eid];
                                             const score = ev?.[category.key]?.[criterion.key];
                                             const hasData = ev != null;
-                                            const penalties = ev?.[category.key]?.penalties?.[criterion.key] || [];
                                             return (
                                                 <div
                                                     key={eid}
@@ -120,34 +139,6 @@ export default function DirectorDetailView({
                                     </div>
                                 );
                             })}
-
-                            {/* Category sums */}
-                            <div className="director-criterion-row director-criterion-sum-row">
-                                <span className="director-criterion-name" style={{ fontWeight: 700 }}>
-                                    SUMA
-                                </span>
-                                {evaluatorIds.map(eid => {
-                                    const ev = evals[eid];
-                                    const sum = calculateCategorySum(ev, category.key);
-                                    const hasData = ev != null;
-                                    return (
-                                        <div
-                                            key={eid}
-                                            className="director-criterion-score"
-                                            style={{
-                                                color: hasData
-                                                    ? EVALUATOR_META[eid].color
-                                                    : 'var(--text-muted)',
-                                                fontWeight: 700,
-                                            }}
-                                        >
-                                            <span className="director-score-value">
-                                                {hasData ? sum : '–'}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
                         </div>
                     </div>
                 ))}

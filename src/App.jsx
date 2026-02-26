@@ -290,7 +290,12 @@ export default function App() {
             const pSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'portrait'), 0);
             const fSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'file'), 0);
             const sSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'still-life'), 0);
-            return [c.code, pSum, fSum, sSum];
+            return [
+                c.code,
+                Number((pSum / 3).toFixed(1)),
+                Number((fSum / 3).toFixed(1)),
+                Number((sSum / 3).toFixed(1))
+            ];
         });
         const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
         ws['!cols'] = [{ wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];

@@ -22,9 +22,13 @@ export default function OverviewScreen({
 
             if (isDirector) {
                 const evals = evaluationsMap[c.id] || {};
-                entry.portraitSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'portrait'), 0);
-                entry.fileSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'file'), 0);
-                entry.stillLifeSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'still-life'), 0);
+                const pSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'portrait'), 0);
+                const fSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'file'), 0);
+                const sSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'still-life'), 0);
+
+                entry.portraitSum = (pSum / 3).toFixed(1);
+                entry.fileSum = (fSum / 3).toFixed(1);
+                entry.stillLifeSum = (sSum / 3).toFixed(1);
             } else {
                 const ev = evaluationsMap[c.id]?.[evaluatorId] || null;
                 entry.portraitSum = calculateCategorySum(ev, 'portrait');

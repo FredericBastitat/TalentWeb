@@ -1596,6 +1596,34 @@ body::before {
     color: var(--text-primary);
 }
 
+.penalty-group {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.penalty-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.penalty-group-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.penalty-group-title::before {
+    content: '📁';
+    font-size: 1.2rem;
+}
+
 @keyframes zoomIn {
     from {
         opacity: 0;

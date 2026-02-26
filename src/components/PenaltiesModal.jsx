@@ -7,20 +7,20 @@ export default function PenaltiesModal({ candidate, evaluationsMap, onClose }) {
     const evals = evaluationsMap[candidate.id] || {};
     const evaluatorIds = [1, 2, 3];
 
-    // Collect all penalties
-    const allPenalties = [];
-    evaluatorIds.forEach(eid => {
-        const ev = evals[eid];
-        if (!ev) return;
+    // Collect all penalties grouped by category
+    const penaltiesByCategory = CATEGORIES.map(cat => {
+        const catPenalties = [];
+        evaluatorIds.forEach(eid => {
+            const ev = evals[eid];
+            if (!ev || !ev[cat.key]) return;
 
-        CATEGORIES.forEach(cat => {
-            const penalties = ev[cat.key]?.penalties || {};
+            const penalties = ev[cat.key].penalties || {};
             Object.keys(penalties).forEach(criterionKey => {
                 const pKeys = penalties[criterionKey];
                 const criterion = cat.criteria.find(c => c.key === criterionKey);
 
                 pKeys.forEach(pKey => {
-                    allPenalties.push({
+                    catPenalties.push({
                         evaluatorId: eid,
                         categoryTitle: cat.title,
                         criterionName: criterion?.name || criterionKey,
@@ -29,7 +29,13 @@ export default function PenaltiesModal({ candidate, evaluationsMap, onClose }) {
                 });
             });
         });
-    });
+        return {
+            title: cat.title,
+            penalties: catPenalties
+        };
+    }).filter(group => group.penalties.length > 0);
+
+    const hasAnyPenalties = penaltiesByCategory.length > 0;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -39,22 +45,26 @@ export default function PenaltiesModal({ candidate, evaluationsMap, onClose }) {
                     <button className="btn-close" onClick={onClose}>&times;</button>
                 </div>
                 <div className="modal-body">
-                    {allPenalties.length === 0 ? (
+                    {!hasAnyPenalties ? (
                         <div className="empty-state" style={{ padding: '2rem 0' }}>
                             <p>Tento uchazeč nemá žádné zaznamenané chyby.</p>
                         </div>
                     ) : (
                         <div className="penalties-list">
-                            {allPenalties.map((p, idx) => (
-                                <div key={idx} className="penalty-item-row" style={{ borderLeftColor: EVALUATOR_META[p.evaluatorId].color }}>
-                                    <div className="penalty-item-meta">
-                                        <span className="penalty-evaluator" style={{ color: EVALUATOR_META[p.evaluatorId].color }}>
-                                            {EVALUATOR_META[p.evaluatorId].shortName}
-                                        </span>
-                                        <span className="penalty-category">{p.categoryTitle}</span>
-                                        <span className="penalty-criterion">{p.criterionName}</span>
-                                    </div>
-                                    <div className="penalty-label-text">{p.label}</div>
+                            {penaltiesByCategory.map((group, gIdx) => (
+                                <div key={gIdx} className="penalty-group">
+                                    <h4 className="penalty-group-title">{group.title}</h4>
+                                    {group.penalties.map((p, idx) => (
+                                        <div key={idx} className="penalty-item-row" style={{ borderLeftColor: EVALUATOR_META[p.evaluatorId].color }}>
+                                            <div className="penalty-item-meta">
+                                                <span className="penalty-evaluator" style={{ color: EVALUATOR_META[p.evaluatorId].color }}>
+                                                    {EVALUATOR_META[p.evaluatorId].shortName}
+                                                </span>
+                                                <span className="penalty-criterion">{p.criterionName}</span>
+                                            </div>
+                                            <div className="penalty-label-text">{p.label}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             ))}
                         </div>
