@@ -125,10 +125,10 @@ export default function EvaluationScreen({
                     const sum = getCategorySum(category.key);
 
                     return (
-                        <div className="category-section" key={category.key}>
-                            <div className="category-header">
-                                <span className="category-title">{category.title}</span>
-                                <span className="category-sum-badge">{sum}</span>
+                        <div className="category-section" key={category.key} style={{ borderColor: `${category.color}44` }}>
+                            <div className="category-header" style={{ borderLeft: `4px solid ${category.color}`, background: category.colorBg }}>
+                                <span className="category-title" style={{ color: category.color }}>{category.title}</span>
+                                <span className="category-sum-badge" style={{ background: category.color, color: '#000' }}>{sum}</span>
                             </div>
                             <div className="category-body">
                                 {category.criteria.map(criterion => {
@@ -140,6 +140,7 @@ export default function EvaluationScreen({
                                             key={`${category.key}-${criterion.key}`}
                                             criterion={criterion}
                                             categoryKey={category.key}
+                                            categoryColor={category.color}
                                             score={scoreValue}
                                             disabled={false}
                                             checkedPenalties={checkedPenalties}

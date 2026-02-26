@@ -6,6 +6,8 @@ export const CATEGORIES = [
     {
         key: 'portrait',
         title: 'PORTRÉT',
+        color: '#fbbf24', // Yellow
+        colorBg: 'rgba(251, 191, 36, 0.1)',
         criteria: [
             {
                 key: 'formal',
@@ -28,7 +30,7 @@ export const CATEGORIES = [
             },
             {
                 key: 'creativity',
-                name: 'Volba námětu / kreativita',
+                name: 'Námět / kreativita',
                 maxScore: 2,
                 penalties: [
                     { value: 'uninteresting', label: 'Nezajímavý námět, fotografie bez nápadu' },
@@ -50,7 +52,7 @@ export const CATEGORIES = [
             },
             {
                 key: 'technical',
-                name: 'Práce se světlem, technická kvalita',
+                name: 'Světlo / kvalita',
                 maxScore: 2,
                 penalties: [
                     { value: 'unsharp', label: 'Neostrá fotografie' },
@@ -65,6 +67,8 @@ export const CATEGORIES = [
     {
         key: 'file',
         title: 'SOUBOR',
+        color: '#f59e0b', // Amber/Golden Yellow
+        colorBg: 'rgba(245, 158, 11, 0.1)',
         criteria: [
             {
                 key: 'formal',
@@ -87,7 +91,7 @@ export const CATEGORIES = [
             },
             {
                 key: 'creativity',
-                name: 'Volba námětu / kreativita',
+                name: 'Námět / kreativita',
                 maxScore: 2,
                 penalties: [
                     { value: 'uninteresting', label: 'Nezajímavý námět' },
@@ -109,7 +113,7 @@ export const CATEGORIES = [
             },
             {
                 key: 'technical',
-                name: 'Práce se světlem, technická kvalita',
+                name: 'Světlo / kvalita',
                 maxScore: 2,
                 penalties: [
                     { value: 'unsharp', label: 'Neostrá fotografie' },
@@ -124,6 +128,8 @@ export const CATEGORIES = [
     {
         key: 'still-life',
         title: 'ZÁTIŠÍ',
+        color: '#34d399', // Green
+        colorBg: 'rgba(52, 211, 153, 0.1)',
         criteria: [
             {
                 key: 'formal',
@@ -152,23 +158,23 @@ export const EVALUATOR_META = {
     1: {
         name: 'Hodnotitel 1',
         shortName: 'H1',
-        color: '#60a5fa',
-        bg: 'rgba(96, 165, 250, 0.12)',
-        borderColor: 'rgba(96, 165, 250, 0.3)',
+        color: '#94a3b8',
+        bg: 'rgba(148, 163, 184, 0.1)',
+        borderColor: 'rgba(148, 163, 184, 0.2)',
     },
     2: {
         name: 'Hodnotitel 2',
         shortName: 'H2',
-        color: '#34d399',
-        bg: 'rgba(52, 211, 153, 0.12)',
-        borderColor: 'rgba(52, 211, 153, 0.3)',
+        color: '#94a3b8',
+        bg: 'rgba(148, 163, 184, 0.1)',
+        borderColor: 'rgba(148, 163, 184, 0.2)',
     },
     3: {
         name: 'Hodnotitel 3',
         shortName: 'H3',
-        color: '#fbbf24',
-        bg: 'rgba(251, 191, 36, 0.12)',
-        borderColor: 'rgba(251, 191, 36, 0.3)',
+        color: '#94a3b8',
+        bg: 'rgba(148, 163, 184, 0.1)',
+        borderColor: 'rgba(148, 163, 184, 0.2)',
     },
 };
 

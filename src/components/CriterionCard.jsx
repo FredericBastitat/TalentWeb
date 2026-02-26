@@ -3,6 +3,7 @@ import React from 'react';
 export default function CriterionCard({
     criterion,
     categoryKey,
+    categoryColor,
     score,
     disabled,
     checkedPenalties,
@@ -11,8 +12,8 @@ export default function CriterionCard({
 }) {
     return (
         <div className={`criterion-card ${disabled ? 'disabled' : ''}`}>
-            <div className="criterion-top">
-                <span className="criterion-name">{criterion.name}</span>
+            <div className="criterion-scoring">
+                <span className="criterion-name" style={{ color: categoryColor }}>{criterion.name}</span>
                 <select
                     className="criterion-select"
                     value={score}
@@ -25,25 +26,27 @@ export default function CriterionCard({
                 </select>
             </div>
 
-            {criterion.penalties && criterion.penalties.length > 0 && (
-                <div className="penalty-chips-container">
-                    {criterion.penalties.map(penalty => {
-                        const isChecked = checkedPenalties.includes(penalty.value);
-                        return (
-                            <button
-                                key={penalty.value}
-                                type="button"
-                                className={`penalty-chip ${isChecked ? 'active' : ''}`}
-                                onClick={() => onPenaltyChange(categoryKey, criterion.key, penalty.value, !isChecked)}
-                                disabled={disabled}
-                            >
-                                <span className="chip-icon">{isChecked ? '✓' : '＋'}</span>
-                                {penalty.label}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
+            <div className="criterion-penalties">
+                {criterion.penalties && criterion.penalties.length > 0 && (
+                    <div className="penalty-chips-container">
+                        {criterion.penalties.map(penalty => {
+                            const isChecked = checkedPenalties.includes(penalty.value);
+                            return (
+                                <button
+                                    key={penalty.value}
+                                    type="button"
+                                    className={`penalty-chip ${isChecked ? 'active' : ''}`}
+                                    onClick={() => onPenaltyChange(categoryKey, criterion.key, penalty.value, !isChecked)}
+                                    disabled={disabled}
+                                >
+                                    <span className="chip-icon">{isChecked ? '✓' : '＋'}</span>
+                                    {penalty.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

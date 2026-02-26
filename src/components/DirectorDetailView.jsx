@@ -72,18 +72,18 @@ export default function DirectorDetailView({
                 {/* Detailed comparison per category */}
                 {CATEGORIES.map(category => (
                     <div className="category-section" key={category.key}>
-                        <div className="category-header">
-                            <span className="category-title">{category.title}</span>
+                        <div className="category-header" style={{ borderLeftColor: category.color }}>
+                            <span className="category-title" style={{ color: category.color }}>{category.title}</span>
                         </div>
                         <div className="category-body">
                             {/* Category SUM (moved to top and highlighted) */}
                             <div className="director-criterion-row director-criterion-sum-row" style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                background: category.colorBg,
+                                borderBottom: `1px solid ${category.color}44`,
                                 marginBottom: '0.5rem',
                                 padding: '0.75rem'
                             }}>
-                                <span className="director-criterion-name" style={{ fontWeight: 800, fontSize: '1.1rem' }}>
+                                <span className="director-criterion-name" style={{ fontWeight: 800, fontSize: '1.1rem', color: category.color }}>
                                     PRŮMĚR / SUMA
                                 </span>
                                 {evaluatorIds.map(eid => {
@@ -95,11 +95,10 @@ export default function DirectorDetailView({
                                             key={eid}
                                             className="director-criterion-score"
                                             style={{
-                                                color: hasData
-                                                    ? EVALUATOR_META[eid].color
-                                                    : 'var(--text-muted)',
+                                                color: hasData ? 'var(--text-primary)' : 'var(--text-muted)',
                                                 fontWeight: 800,
-                                                fontSize: '1.1rem'
+                                                fontSize: '1.1rem',
+                                                opacity: hasData ? 1 : 0.3
                                             }}
                                         >
                                             <span className="director-score-value">
@@ -124,11 +123,7 @@ export default function DirectorDetailView({
                                                 <div
                                                     key={eid}
                                                     className="director-criterion-score"
-                                                    style={{
-                                                        color: hasData
-                                                            ? EVALUATOR_META[eid].color
-                                                            : 'var(--text-muted)',
-                                                    }}
+                                                    style={{ color: 'var(--text-secondary)' }}
                                                 >
                                                     <span className="director-score-value">
                                                         {hasData ? (score ?? 0) : '–'}

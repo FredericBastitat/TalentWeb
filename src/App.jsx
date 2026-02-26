@@ -311,7 +311,7 @@ export default function App() {
 
         const excelCategories = [
             {
-                name: 'PORTRÉT', key: 'portrait', color: '4472C4',
+                name: 'PORTRÉT', key: 'portrait', color: 'FBBF24',
                 criteria: [
                     { key: 'formal', label: 'Formální' },
                     { key: 'genre', label: 'Žánr' },
@@ -321,7 +321,7 @@ export default function App() {
                 ],
             },
             {
-                name: 'SOUBOR', key: 'file', color: '548235',
+                name: 'SOUBOR', key: 'file', color: 'F59E0B',
                 criteria: [
                     { key: 'formal', label: 'Formální' },
                     { key: 'relevance', label: 'Souvislost' },
@@ -331,7 +331,7 @@ export default function App() {
                 ],
             },
             {
-                name: 'ZÁTIŠÍ', key: 'still-life', color: 'BF8F00',
+                name: 'ZÁTIŠÍ', key: 'still-life', color: '34D399',
                 criteria: [
                     { key: 'formal', label: 'Formální' },
                     { key: 'genre', label: 'Žánr' },

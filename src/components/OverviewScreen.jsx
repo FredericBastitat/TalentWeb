@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { EVALUATOR_META, calculateCategorySum, calculateTotalSum } from '../constants';
+import { CATEGORIES, EVALUATOR_META, calculateCategorySum, calculateTotalSum } from '../constants';
 
 export default function OverviewScreen({
     candidates,
@@ -148,9 +148,9 @@ export default function OverviewScreen({
                                         <span className="code-badge">{candidate.code || ''}</span>
                                     </td>
 
-                                    <td className="score-cell">{candidate.portraitSum}</td>
-                                    <td className="score-cell">{candidate.fileSum}</td>
-                                    <td className="score-cell">{candidate.stillLifeSum}</td>
+                                    <td className="score-cell" style={{ color: CATEGORIES[0].color }}>{candidate.portraitSum}</td>
+                                    <td className="score-cell" style={{ color: CATEGORIES[1].color }}>{candidate.fileSum}</td>
+                                    <td className="score-cell" style={{ color: CATEGORIES[2].color }}>{candidate.stillLifeSum}</td>
 
                                     <td>
                                         <div className="table-actions">

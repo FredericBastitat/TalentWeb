@@ -51,22 +51,22 @@ export default function PenaltiesModal({ candidate, evaluationsMap, onClose }) {
                         </div>
                     ) : (
                         <div className="penalties-list">
-                            {penaltiesByCategory.map((group, gIdx) => (
-                                <div key={gIdx} className="penalty-group">
-                                    <h4 className="penalty-group-title">{group.title}</h4>
-                                    {group.penalties.map((p, idx) => (
-                                        <div key={idx} className="penalty-item-row" style={{ borderLeftColor: EVALUATOR_META[p.evaluatorId].color }}>
-                                            <div className="penalty-item-meta">
-                                                <span className="penalty-evaluator" style={{ color: EVALUATOR_META[p.evaluatorId].color }}>
-                                                    {EVALUATOR_META[p.evaluatorId].shortName}
-                                                </span>
-                                                <span className="penalty-criterion">{p.criterionName}</span>
+                            {penaltiesByCategory.map((group, gIdx) => {
+                                const cat = CATEGORIES.find(c => c.title === group.title);
+                                return (
+                                    <div key={gIdx} className="penalty-group" style={{ borderColor: cat?.colorBg }}>
+                                        <h4 className="penalty-group-title" style={{ color: cat?.color }}>{group.title}</h4>
+                                        {group.penalties.map((p, idx) => (
+                                            <div key={idx} className="penalty-item-row">
+                                                <div className="penalty-item-meta">
+                                                    <span className="penalty-criterion">{p.criterionName}</span>
+                                                </div>
+                                                <div className="penalty-label-text">{p.label}</div>
                                             </div>
-                                            <div className="penalty-label-text">{p.label}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
+                                        ))}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
