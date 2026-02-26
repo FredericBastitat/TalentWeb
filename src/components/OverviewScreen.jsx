@@ -29,13 +29,11 @@ export default function OverviewScreen({
                 entry.portraitSum = (pSum / 3).toFixed(1);
                 entry.fileSum = (fSum / 3).toFixed(1);
                 entry.stillLifeSum = (sSum / 3).toFixed(1);
-                entry.totalScore = ((pSum + fSum + sSum) / 3).toFixed(1);
             } else {
                 const ev = evaluationsMap[c.id]?.[evaluatorId] || null;
                 entry.portraitSum = calculateCategorySum(ev, 'portrait');
                 entry.fileSum = calculateCategorySum(ev, 'file');
                 entry.stillLifeSum = calculateCategorySum(ev, 'still-life');
-                entry.totalScore = calculateTotalSum(ev);
             }
 
             return entry;
@@ -58,8 +56,6 @@ export default function OverviewScreen({
                     return (b.fileSum || 0) - (a.fileSum || 0);
                 case 'still-life':
                     return (b.stillLifeSum || 0) - (a.stillLifeSum || 0);
-                case 'total':
-                    return (b.totalScore || 0) - (a.totalScore || 0);
                 default:
                     return 0;
             }
@@ -73,7 +69,6 @@ export default function OverviewScreen({
         { value: 'portrait', label: 'Řadit podle portrétu' },
         { value: 'file', label: 'Řadit podle souboru' },
         { value: 'still-life', label: 'Řadit podle zátiší' },
-        { value: 'total', label: 'Řadit podle celku' },
     ];
 
     return (
@@ -128,7 +123,6 @@ export default function OverviewScreen({
                             <th>Portrét</th>
                             <th>Soubor</th>
                             <th>Zátiší</th>
-                            <th>Celkem</th>
                             <th>Akce</th>
                         </tr>
                     </thead>
@@ -157,7 +151,6 @@ export default function OverviewScreen({
                                     <td className="score-cell" style={{ color: CATEGORIES[0].color }}>{candidate.portraitSum}</td>
                                     <td className="score-cell" style={{ color: CATEGORIES[1].color }}>{candidate.fileSum}</td>
                                     <td className="score-cell" style={{ color: CATEGORIES[2].color }}>{candidate.stillLifeSum}</td>
-                                    <td className="score-cell score-total">{candidate.totalScore}</td>
 
                                     <td>
                                         <div className="table-actions">

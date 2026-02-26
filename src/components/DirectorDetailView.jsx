@@ -62,7 +62,6 @@ export default function DirectorDetailView({
                                         <span>P: {calculateCategorySum(ev, 'portrait')}</span>
                                         <span>S: {calculateCategorySum(ev, 'file')}</span>
                                         <span>Z: {calculateCategorySum(ev, 'still-life')}</span>
-                                        <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>Σ: {calculateTotalSum(ev)}</span>
                                     </div>
                                 )}
                             </div>
@@ -77,18 +76,7 @@ export default function DirectorDetailView({
                             <span className="category-title" style={{ color: category.color }}>{category.title}</span>
                         </div>
                         <div className="category-body">
-                            {/* Column Headers */}
-                            <div className="director-criterion-header">
-                                <span className="director-criterion-name-header">Kritérium</span>
-                                {evaluatorIds.map(eid => (
-                                    <span key={eid} className="director-criterion-score-header" style={{ color: EVALUATOR_META[eid].color }}>
-                                        {EVALUATOR_META[eid].shortName}
-                                    </span>
-                                ))}
-                                <span className="director-criterion-score-header" style={{ color: 'var(--accent-primary)' }}>Σ</span>
-                            </div>
-
-                            {/* Category SUM */}
+                            {/* Category SUM (moved to top and highlighted) */}
                             <div className="director-criterion-row director-criterion-sum-row" style={{
                                 background: category.colorBg,
                                 borderBottom: `1px solid ${category.color}44`,
@@ -96,7 +84,7 @@ export default function DirectorDetailView({
                                 padding: '0.75rem'
                             }}>
                                 <span className="director-criterion-name" style={{ fontWeight: 800, fontSize: '1.1rem', color: category.color }}>
-                                    SUMA
+                                    PRŮMĚR / SUMA
                                 </span>
                                 {evaluatorIds.map(eid => {
                                     const ev = evals[eid];
@@ -119,14 +107,9 @@ export default function DirectorDetailView({
                                         </div>
                                     );
                                 })}
-                                {/* Row Total for SUMA */}
-                                <div className="director-criterion-score" style={{ fontWeight: 900, color: category.color, fontSize: '1.1rem' }}>
-                                    {evaluatorIds.reduce((acc, eid) => acc + calculateCategorySum(evals[eid], category.key), 0)}
-                                </div>
                             </div>
 
                             {category.criteria.map(criterion => {
-                                const rowTotal = evaluatorIds.reduce((acc, eid) => acc + (evals[eid]?.[category.key]?.[criterion.key] || 0), 0);
                                 return (
                                     <div className="director-criterion-row" key={criterion.key}>
                                         <span className="director-criterion-name">
@@ -148,10 +131,6 @@ export default function DirectorDetailView({
                                                 </div>
                                             );
                                         })}
-                                        {/* Row Total for Criterion */}
-                                        <div className="director-criterion-score" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                                            {rowTotal}
-                                        </div>
                                     </div>
                                 );
                             })}

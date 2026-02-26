@@ -284,23 +284,21 @@ export default function App() {
     };
 
     const exportDirectorSummary = (wb) => {
-        const headers = ['Kód', 'Portrét', 'Soubor', 'Zátiší', 'Celkový průměr'];
+        const headers = ['Kód', 'Portrét', 'Soubor', 'Zátiší'];
         const rows = candidates.map(c => {
             const evals = evaluationsMap[c.id] || {};
             const pSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'portrait'), 0);
             const fSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'file'), 0);
             const sSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'still-life'), 0);
-            const totalAvg = (pSum + fSum + sSum) / 3;
             return [
                 c.code,
                 Number((pSum / 3).toFixed(1)),
                 Number((fSum / 3).toFixed(1)),
-                Number((sSum / 3).toFixed(1)),
-                Number(totalAvg.toFixed(1))
+                Number((sSum / 3).toFixed(1))
             ];
         });
         const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-        ws['!cols'] = [{ wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }];
+        ws['!cols'] = [{ wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
         XLSX.utils.book_append_sheet(wb, ws, 'Souhrn');
     };
 
