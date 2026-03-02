@@ -5,7 +5,7 @@ export default function AppHeader({ currentYear, onYearChange, onLogout, role })
     const years = useMemo(() => {
         const currentYearValue = new Date().getFullYear();
         const yrs = [];
-        for (let year = 2020; year <= currentYearValue + 1; year++) {
+        for (let year = 2025; year <= currentYearValue + 1; year++) {
             yrs.push(`${year}/${year + 1}`);
         }
         return yrs.reverse();

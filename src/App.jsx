@@ -292,9 +292,9 @@ export default function App() {
             const sSum = [1, 2, 3].reduce((acc, eid) => acc + calculateCategorySum(evals[eid], 'still-life'), 0);
             return [
                 c.code,
-                Number((pSum / 3).toFixed(1)),
-                Number((fSum / 3).toFixed(1)),
-                Number((sSum / 3).toFixed(1))
+                Number((pSum / 3).toFixed(2)),
+                Number((fSum / 3).toFixed(2)),
+                Number((sSum / 3).toFixed(2))
             ];
         });
         const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
